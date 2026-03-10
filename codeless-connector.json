@@ -1,0 +1,337 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "string",
+            "defaultValue": "sentineldatalake",
+            "metadata": {
+                "description": "The Log Analytics workspace where Sentinel is enabled. All Sentinel resources are scoped to this workspace."
+            }
+        },
+        "connectorDefinitionName": {
+            "type": "string",
+            "defaultValue": "FeodoTrackerThreatIntelConnector",
+            "metadata": {
+                "description": "Used as both the UI definition name AND the link key between the tile (Asset 4) and the poller engine (Asset 5). They must match exactly."
+            }
+        },
+        "dataCollectionRuleName": {
+            "type": "string",
+            "defaultValue": "FeodoTrackerDCR",
+            "metadata": {
+                "description": "Name of the DCR resource. Visible in: Azure Portal -> Monitor -> Data Collection Rules."
+            }
+        },
+        "dataCollectionEndpointName": {
+            "type": "string",
+            "defaultValue": "codelessconnectorpoll",
+            "metadata": {
+                "description": "Name of the DCE to CREATE. This template creates it from scratch so it is fully self-contained and shareable with team members who have no pre-existing DCE."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "West Europe",
+            "metadata": {
+                "description": "All resources must be in the same region as the workspace. A mismatch causes deployment errors."
+            }
+        }
+    },
+    "variables": {
+        "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace'))]",
+        "tableName": "FeodoTracker_BotnetC2_CL",
+        "streamName": "[concat('Custom-', variables('tableName'))]",
+        "dceResourceId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', parameters('dataCollectionEndpointName'))]"
+    },
+    "resources": [
+        {
+            "comments": "ASSET 1 - DATA COLLECTION ENDPOINT: codelessconnectorpoll. The HTTPS ingestion endpoint that acts as the entry point for data flowing into Log Analytics. The poller sends data TO this URL, the DCR picks it up FROM here and transforms it. Created by this template so it is fully self-contained - no prerequisites needed for team members. Visible in: Azure Portal -> Monitor -> Data Collection Endpoints -> SentinelSpace RG.",
+            "type": "Microsoft.Insights/dataCollectionEndpoints",
+            "apiVersion": "2022-06-01",
+            "name": "[parameters('dataCollectionEndpointName')]",
+            "location": "West Europe",
+            "properties": {
+                "networkAcls": {
+                    "publicNetworkAccess": "Enabled"
+                }
+            }
+        },
+        {
+            "comments": "ASSET 2 - CUSTOM TABLE: FeodoTracker_BotnetC2_CL. Defines the schema for the Log Analytics destination table. Created before the DCR (Asset 3) because the DCR validates at creation time that the outputStream points to a real table. Visible in: Sentinel -> Logs | LA workspace -> Tables -> Custom logs.",
+            "type": "Microsoft.OperationalInsights/workspaces/tables",
+            "apiVersion": "2022-10-01",
+            "name": "[concat(parameters('workspace'), '/', variables('tableName'))]",
+            "properties": {
+                "schema": {
+                    "name": "[variables('tableName')]",
+                    "columns": [
+                        { "name": "TimeGenerated", "type": "datetime",  "description": "Ingest timestamp - set by KQL transform using now()" },
+                        { "name": "IPAddress",     "type": "string",   "description": "Botnet C2 IP address - mapped from API field ip_address" },
+                        { "name": "Port",          "type": "int",      "description": "C2 port number - mapped from API field port" },
+                        { "name": "Status",        "type": "string",   "description": "online or offline - mapped from API field status" },
+                        { "name": "Hostname",      "type": "string",   "description": "C2 hostname - mapped from API field hostname" },
+                        { "name": "ASNumber",      "type": "int",      "description": "Autonomous System number - mapped from API field as_number" },
+                        { "name": "ASName",        "type": "string",   "description": "ISP or AS name - mapped from API field as_name" },
+                        { "name": "Country",       "type": "string",   "description": "Hosting country - mapped from API field country" },
+                        { "name": "FirstSeen",     "type": "datetime", "description": "First observed date - cast from string via todatetime() in KQL transform" },
+                        { "name": "LastOnline",    "type": "string",   "description": "Last confirmed online date - mapped from API field last_online" },
+                        { "name": "Malware",       "type": "string",   "description": "Malware family e.g. Emotet, QakBot, IcedID - mapped from API field malware" }
+                    ]
+                },
+                "retentionInDays": 90,
+                "totalRetentionInDays": 90
+            }
+        },
+        {
+            "comments": "ASSET 3 - DATA COLLECTION RULE: FeodoTrackerDCR. Transformation and routing layer. DCE (codelessconnectorpoll) = the HTTPS loading dock where data arrives from the poller. DCR = the processing room that renames snake_case API fields to PascalCase table columns via KQL and routes rows to the table. Depends on both the DCE (Asset 1) and table (Asset 2) existing first because reference() reads the DCE endpoint URL and validates the output stream at deploy time. Visible in: Azure Portal -> Monitor -> Data Collection Rules -> SentinelSpace RG.",
+            "type": "Microsoft.Insights/dataCollectionRules",
+            "apiVersion": "2022-06-01",
+            "name": "[parameters('dataCollectionRuleName')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints', parameters('dataCollectionEndpointName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('workspace'), variables('tableName'))]"
+            ],
+            "properties": {
+                "dataCollectionEndpointId": "[variables('dceResourceId')]",
+                "streamDeclarations": {
+                    "[variables('streamName')]": {
+                        "columns": [
+                            { "name": "ip_address",  "type": "string" },
+                            { "name": "port",        "type": "int"    },
+                            { "name": "status",      "type": "string" },
+                            { "name": "hostname",    "type": "string" },
+                            { "name": "as_number",   "type": "int"    },
+                            { "name": "as_name",     "type": "string" },
+                            { "name": "country",     "type": "string" },
+                            { "name": "first_seen",  "type": "string" },
+                            { "name": "last_online", "type": "string" },
+                            { "name": "malware",     "type": "string" }
+                        ]
+                    }
+                },
+                "destinations": {
+                    "logAnalytics": [
+                        {
+                            "workspaceResourceId": "[variables('workspaceResourceId')]",
+                            "name": "clv2ws1"
+                        }
+                    ]
+                },
+                "dataFlows": [
+                    {
+                        "streams": [ "[variables('streamName')]" ],
+                        "destinations": [ "clv2ws1" ],
+                        "transformKql": "source | extend TimeGenerated = now(), IPAddress = ip_address, Port = port, Status = status, Hostname = hostname, ASNumber = as_number, ASName = as_name, Country = country, FirstSeen = todatetime(first_seen), LastOnline = last_online, Malware = malware | project TimeGenerated, IPAddress, Port, Status, Hostname, ASNumber, ASName, Country, FirstSeen, LastOnline, Malware",
+                        "outputStream": "[variables('streamName')]"
+                    }
+                ]
+            }
+        },
+        {
+            "comments": "ASSET 4 - CONNECTOR UI DEFINITION: FeodoTrackerThreatIntelConnector. The tile visible in Sentinel -> Data connectors. Controls display name, description, activity graph, and sample queries shown in the portal. Does NOT collect data itself. Linked to the poller (Asset 5) by matching connectorDefinitionName. The HasDataConnectors connectivity criteria makes the tile show Connected when Asset 5 exists with isActive=true.",
+            "type": "Microsoft.SecurityInsights/dataConnectorDefinitions",
+            "apiVersion": "2022-09-01-preview",
+            "name": "[parameters('connectorDefinitionName')]",
+            "location": "West Europe",
+            "kind": "Customizable",
+            "scope": "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspace'))]",
+            "properties": {
+                "connectorUiConfig": {
+                    "id": "[parameters('connectorDefinitionName')]",
+                    "title": "Feodo Tracker Botnet C2 Threat Intelligence",
+                    "publisher": "abuse.ch",
+                    "descriptionMarkdown": "This connector ingests botnet Command & Control (C2) IP data from [Feodo Tracker](https://feodotracker.abuse.ch/) by abuse.ch into Microsoft Sentinel. Data includes C2 IPs for malware families such as Emotet, QakBot, and IcedID.",
+                    "graphQueriesTableName": "[variables('tableName')]",
+                    "graphQueries": [
+                        {
+                            "metricName": "Total C2 IPs received",
+                            "legend": "Feodo Tracker C2 IPs",
+                            "baseQuery": "FeodoTracker_BotnetC2_CL"
+                        }
+                    ],
+                    "sampleQueries": [
+                        {
+                            "description": "All botnet C2 IPs",
+                            "query": "FeodoTracker_BotnetC2_CL | take 100"
+                        },
+                        {
+                            "description": "Online C2 servers by malware family",
+                            "query": "FeodoTracker_BotnetC2_CL | where Status == 'online' | summarize Count = count() by Malware | sort by Count desc"
+                        },
+                        {
+                            "description": "C2 servers by country",
+                            "query": "FeodoTracker_BotnetC2_CL | summarize Count = count() by Country | sort by Count desc | take 20"
+                        }
+                    ],
+                    "dataTypes": [
+                        {
+                            "name": "[variables('tableName')]",
+                            "lastDataReceivedQuery": "FeodoTracker_BotnetC2_CL | summarize Time = max(TimeGenerated) | where isnotempty(Time)"
+                        }
+                    ],
+                    "connectivityCriteria": [
+                        { "type": "HasDataConnectors" }
+                    ],
+                    "availability": {
+                        "isPreview": false,
+                        "status": 1
+                    },
+                    "permissions": {
+                        "resourceProvider": [
+                            {
+                                "provider": "Microsoft.OperationalInsights/workspaces",
+                                "permissionsDisplayText": "Read and Write permissions on the workspace are required.",
+                                "providerDisplayName": "Workspace",
+                                "scope": "Workspace",
+                                "requiredPermissions": {
+                                    "read": true,
+                                    "write": true,
+                                    "delete": true
+                                }
+                            }
+                        ]
+                    },
+                    "instructionSteps": [
+                        {
+                            "title": "Connect to Feodo Tracker C2 Feed",
+                            "description": "This connector pulls botnet C2 IP data from Feodo Tracker by abuse.ch. No authentication required.",
+                            "instructions": [
+                                {
+                                    "type": "DataConnectorsGrid",
+                                    "parameters": {
+                                        "mapping": [
+                                            {
+                                                "columnName": "Status",
+                                                "columnValue": "status"
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "comments": "ASSET 5 - DATA CONNECTOR POLLER ENGINE: FeodoTrackerThreatIntelConnector-dc. The active RestApiPoller that calls the Feodo Tracker API every ~5 min and pushes data through DCE -> DCR -> Table. Not visible as a separate item in the Sentinel UI - only inspectable via CLI. Linked to Asset 4 by connectorDefinitionName. Auth uses a dummy APIKey header (X-Source: feodotracker) because Sentinel RestApiPoller rejects auth type None - Feodo Tracker ignores this header entirely. isActive=true starts polling immediately on deploy.",
+            "type": "Microsoft.SecurityInsights/dataConnectors",
+            "apiVersion": "2022-12-01-preview",
+            "name": "[concat(parameters('connectorDefinitionName'), '-dc')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionRules', parameters('dataCollectionRuleName'))]",
+                "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/dataConnectorDefinitions', parameters('connectorDefinitionName'))]"
+            ],
+            "kind": "RestApiPoller",
+            "scope": "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspace'))]",
+            "properties": {
+                "connectorDefinitionName": "[parameters('connectorDefinitionName')]",
+                "dataType": "[variables('tableName')]",
+                "dcrConfig": {
+                    "dataCollectionEndpoint": "[reference(variables('dceResourceId'), '2022-06-01').logsIngestion.endpoint]",
+                    "dataCollectionRuleImmutableId": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', parameters('dataCollectionRuleName'))).immutableId]",
+                    "streamName": "[variables('streamName')]"
+                },
+                "auth": {
+                    "type": "APIKey",
+                    "apiKey": "feodotracker",
+                    "apiKeyName": "X-Source",
+                    "apiKeyLocation": "Header"
+                },
+                "request": {
+                    "apiEndpoint": "https://feodotracker.abuse.ch/downloads/ipblocklist.json",
+                    "httpMethod": "GET",
+                    "headers": { "Accept": "application/json" },
+                    "rateLimitQps": 1,
+                    "retryCount": 3,
+                    "timeoutInSeconds": 120
+                },
+                "response": {
+                    "eventsJsonPaths": [ "$[*]" ]
+                },
+                "isActive": true
+            }
+        },
+        {
+            "comments": "ASSET 6 - ACTIVE ANALYTICS RULE: Network Connection to Known Feodo Tracker C2 IP. A live scheduled detection rule that runs every hour and cross-references CommonSecurityLog (firewalls/proxies) against currently online C2 IPs. Creates High severity incidents grouped by IP address. MITRE: CommandAndControl / T1071. Requires CommonSecurityLog - change source table to AzureNetworkAnalytics_CL or DeviceNetworkEvents if needed. Visible in: Sentinel -> Analytics -> Active rules.",
+            "type": "Microsoft.SecurityInsights/alertRules",
+            "apiVersion": "2023-02-01-preview",
+            "name": "[guid('FeodoTrackerC2DetectionRule', parameters('workspace'))]",
+            "location": "West Europe",
+            "kind": "Scheduled",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('workspace'), variables('tableName'))]"
+            ],
+            "scope": "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspace'))]",
+            "properties": {
+                "displayName": "Network Connection to Known Feodo Tracker C2 IP",
+                "description": "Detects outbound network connections to IPs listed in the Feodo Tracker botnet C2 feed. Matches against CommonSecurityLog. Change source table to AzureNetworkAnalytics_CL or DeviceNetworkEvents if CommonSecurityLog is not available.",
+                "severity": "High",
+                "enabled": true,
+                "query": "let C2IPs = FeodoTracker_BotnetC2_CL | where Status == 'online' | summarize by IPAddress;\nCommonSecurityLog\n| where DestinationIP in (C2IPs)\n| project TimeGenerated, SourceIP, DestinationIP, DestinationPort, Activity, DeviceVendor, DeviceProduct",
+                "queryFrequency": "PT1H",
+                "queryPeriod": "PT1H",
+                "triggerOperator": "GreaterThan",
+                "triggerThreshold": 0,
+                "suppressionDuration": "PT1H",
+                "suppressionEnabled": false,
+                "tactics": [ "CommandAndControl" ],
+                "techniques": [ "T1071" ],
+                "incidentConfiguration": {
+                    "createIncident": true,
+                    "groupingConfiguration": {
+                        "enabled": true,
+                        "reopenClosedIncident": false,
+                        "lookbackDuration": "PT5H",
+                        "matchingMethod": "AnyAlert",
+                        "groupByEntities": [ "IP" ],
+                        "groupByAlertDetails": [],
+                        "groupByCustomDetails": []
+                    }
+                },
+                "entityMappings": [
+                    {
+                        "entityType": "IP",
+                        "fieldMappings": [
+                            { "identifier": "Address", "columnName": "DestinationIP" }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "comments": "ASSET 7 - WORKBOOK: Feodo Tracker C2 Threat Intelligence Dashboard. The deployed workbook visible to all workspace users. Contains: pie chart (C2s by malware family), bar chart (top 15 hosting countries), live table (currently online C2 servers). kind=shared makes it visible to all users. Visible in: Sentinel -> Workbooks -> My workbooks.",
+            "type": "Microsoft.Insights/workbooks",
+            "apiVersion": "2022-04-01",
+            "name": "[guid('FeodoTrackerWorkbook', parameters('workspace'))]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces/tables', parameters('workspace'), variables('tableName'))]"
+            ],
+            "kind": "shared",
+            "properties": {
+                "displayName": "Feodo Tracker C2 Threat Intelligence",
+                "category": "sentinel",
+                "sourceId": "[variables('workspaceResourceId')]",
+                "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"## Feodo Tracker Botnet C2 Dashboard\\nBotnet Command & Control threat intelligence from abuse.ch\"},\"name\":\"header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"FeodoTracker_BotnetC2_CL | summarize Count = count() by Malware | sort by Count desc\",\"size\":1,\"title\":\"C2 Servers by Malware Family\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"malware-pie\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"FeodoTracker_BotnetC2_CL | summarize Count = count() by Country | sort by Count desc | take 15\",\"size\":1,\"title\":\"Top 15 Countries Hosting C2 Servers\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"name\":\"country-bar\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"FeodoTracker_BotnetC2_CL | where Status == 'online' | project TimeGenerated, IPAddress, Port, Malware, Country, ASName | sort by TimeGenerated desc\",\"size\":1,\"title\":\"Currently Online C2 Servers\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"online-table\"}],\"styleSettings\":{},\"$schema\":\"https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json\"}"
+            }
+        }
+    ],
+    "outputs": {
+        "dataCollectionEndpointId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', parameters('dataCollectionEndpointName'))]"
+        },
+        "dataCollectionRuleId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Insights/dataCollectionRules', parameters('dataCollectionRuleName'))]"
+        },
+        "tableName": {
+            "type": "string",
+            "value": "[variables('tableName')]"
+        }
+    }
+}
