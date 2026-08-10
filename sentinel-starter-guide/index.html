@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Sentinel: Platform Guide</title>
+<style>
+  :root {
+    --primary: #0078D4; --primary-dark: #005A9E;
+    --accent: #50E6FF;
+    --bg: #F5F5F5; --surface: #FFFFFF; --surface2: #EBEBEB;
+    --border: #E1DFDD; --text: #323130; --text-dim: #605E5C;
+    --green: #0E7A0D; --orange: #C67A00; --red: #D13438; --purple: #8764B8;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08); --radius: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  
+  /* Header */
+  .header { background: linear-gradient(135deg, #0078D4 0%, #005A9E 100%); color: white; border-bottom: 1px solid var(--border); padding: 24px 32px; position: sticky; top: 0; z-index: 100; }
+  .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0E7A0D, #50E6FF, #0078D4); }
+  .header h1 { font-size: 1.5rem; font-weight: 700; color: white; }
+  .header h1 span { color: var(--accent); }
+  .header .subtitle { color: rgba(255,255,255,0.8); font-size: 0.85rem; margin-top: 4px; }
+  
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); background: var(--surface); overflow-x: auto; position: sticky; top: 78px; z-index: 99; box-shadow: var(--shadow); }
+  .tab { padding: 12px 20px; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; font-size: 0.85rem; font-weight: 600; white-space: nowrap; transition: all 0.2s; }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  
+  /* Content */
+  .content { max-width: 1100px; margin: 0 auto; padding: 32px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  
+  h2 { font-size: 1.3rem; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary); font-weight: 700; }
+  h3 { font-size: 1.05rem; color: var(--green); margin: 24px 0 12px; font-weight: 700; }
+  h4 { font-size: 0.95rem; color: var(--orange); margin: 16px 0 8px; font-weight: 700; }
+  p { margin-bottom: 12px; }
+  
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.85rem; background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  th { background: var(--primary); color: white; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 10px 12px; border: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) { background: #F0F0F0; }
+  
+  /* Code blocks */
+  pre { background: #1E1E1E; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 0.8rem; line-height: 1.5; color: #D4D4D4; }
+  code { font-family: 'Cascadia Code', 'Fira Code', monospace; color: var(--primary-dark); background: #E8F0FE; padding: 1px 5px; border-radius: 3px; font-size: 0.82rem; }
+  pre code { color: #D4D4D4; background: none; padding: 0; }
+  .comment { color: #6A9955; }
+  .keyword { color: #569CD6; }
+  .string { color: #CE9178; }
+  .func { color: #DCDCAA; }
+  
+  /* Pipeline diagram */
+  .pipeline { background: #1E1E1E; color: #D4D4D4; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 16px 0; font-family: monospace; font-size: 0.85rem; line-height: 1.8; white-space: pre; overflow-x: auto; }
+  .pipeline .node { color: #569CD6; font-weight: 600; }
+  .pipeline .desc { color: #9CDCFE; }
+  
+  /* Callout boxes */
+  .callout { border-radius: var(--radius); padding: 16px; margin: 16px 0; border-left: 4px solid; background: var(--surface); box-shadow: var(--shadow); }
+  .callout.message { background: #E8F0FE; border-color: var(--primary); }
+  .callout.warning { background: #FFF4CE; border-color: var(--orange); }
+  .callout.tip { background: #DFF6DD; border-color: var(--green); }
+  .callout strong:first-child { display: block; margin-bottom: 4px; }
+  .callout.message strong { color: var(--primary); }
+  .callout.warning strong { color: var(--orange); }
+  .callout.tip strong { color: var(--green); }
+  .callout.portal { background: #FFF4CE; border-color: var(--orange); }
+  .callout.portal strong { color: var(--orange); }
+  .callout.portal code { background: rgba(198,122,0,0.12); padding: 1px 5px; border-radius: 3px; font-size: 0.82rem; }
+  
+  /* One-liners */
+  blockquote { border-left: 4px solid var(--purple); padding: 12px 16px; margin: 12px 0; background: #F3F0F9; font-style: italic; color: var(--text); border-radius: 0 var(--radius) var(--radius) 0; }
+  blockquote strong { color: var(--purple); }
+  
+  /* Lists */
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 6px; }
+  
+  /* Use case badges */
+  .uc { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-right: 6px; }
+  .uc1 { background: #FDE7E9; color: var(--red); }
+  .uc2 { background: #FFF4CE; color: var(--orange); }
+  
+  /* Pricing tag */
+  .price-free { color: var(--green); font-weight: 600; }
+  .price-paid { color: var(--orange); }
+  a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  a:hover { text-decoration: underline; color: var(--primary-dark); }
+  
+  /* Collapsible code blocks */
+  details { margin: 12px 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+  details summary { padding: 12px 16px; cursor: pointer; color: var(--primary); font-size: 0.85rem; font-weight: 600; }
+  details summary:hover { background: var(--surface2); }
+  details[open] summary { border-bottom: 1px solid var(--border); }
+  details pre { margin: 0; border: none; border-radius: 0; }
+  
+  /* Call flow timeline */
+  .timeline { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+  .timeline-item { display: flex; gap: 16px; align-items: flex-start; padding: 12px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .timeline-time { color: var(--primary); font-weight: 600; min-width: 60px; font-size: 0.85rem; }
+  .timeline-content { flex: 1; }
+  .timeline-content strong { color: var(--text); }
+  .timeline-content p { color: var(--text-dim); font-size: 0.85rem; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡️ <span>Microsoft Sentinel</span>: Platform Guide</h1>
+  <div class="subtitle">Your guide to operationalizing Microsoft Sentinel · From onboarding to advanced automation</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <a href="#getstarted" class="tab active" data-tab="getstarted" style="text-decoration:none; color:inherit;">🚀 Getting Started</a>
+  <a href="#overview" class="tab" data-tab="overview" style="text-decoration:none; color:inherit;">📋 Use Cases</a>
+  <a href="#rules" class="tab" data-tab="rules" style="text-decoration:none; color:inherit;">🔧 Rules & Automation</a>
+  <a href="#graphs" class="tab" data-tab="graphs" style="text-decoration:none; color:inherit;">🛡️ Sentinel Platform</a>
+  <a href="#resources" class="tab" data-tab="resources" style="text-decoration:none; color:inherit;">📚 Resources & Pricing</a>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: GETTING STARTED                       -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section active" id="getstarted">
+
+<h2>Getting Started with Microsoft Sentinel</h2>
+
+<h3>Step 1: Create & Plan Your Log Analytics Workspace</h3>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Go to <code>portal.azure.com</code> → Search "Log Analytics workspaces" → + Create
+</div>
+
+<h4>Enable Microsoft Sentinel on the Workspace</h4>
+<p>After creating the workspace, enable Microsoft Sentinel on it: <code>portal.azure.com</code> → Search "Microsoft Sentinel" → + Create → Select the workspace → <strong>Add</strong>. Once added, Sentinel is active and ready for the next steps.</p>
+<div class="callout warning">
+<strong>⚠️ Note:</strong> Once Sentinel is deployed on a workspace, moving that workspace to another resource group or subscription is <strong>not supported</strong>.
+</div>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/quickstart-onboard" target="_blank">Onboard Microsoft Sentinel</a></li>
+</ul>
+
+<div class="callout warning">
+<strong>⚠️ Always create a dedicated security workspace.</strong> Even if you already have a Log Analytics workspace (e.g., for IT ops or application monitoring), create a <strong>new, separate workspace specifically for security</strong>. Sharing a workspace with non-security workloads creates issues with RBAC, data retention policies, cost attribution, and compliance. The security workspace will be the one onboarded to Sentinel.
+</div>
+<p>A dedicated Log Analytics workspace is the foundation of Microsoft Sentinel. All security data ingestion, detection, and investigation happens in this workspace. Plan your workspace architecture before creating it. These decisions affect cost, access control, network performance, and compliance.</p>
+<table>
+  <tr><th>Decision</th><th>Guidance</th></tr>
+  <tr><td><strong>Dedicated security workspace</strong></td><td>Always create an independent Log Analytics workspace for security. Do not share with IT ops, application monitoring, or other non-security workloads. This ensures clean RBAC boundaries, separate retention policies, and accurate cost attribution</td></tr>
+  <tr><td><strong>Region (proximity to workloads)</strong></td><td>Create the workspace in a region closest to where the actual workloads you're monitoring are running. For example, if your Azure architecture is concentrated in West Europe or Germany West Central, place the workspace there. This reduces <strong>egress, bandwidth, and network costs</strong> by keeping log data close to its source</td></tr>
+  <tr><td><strong>Data residency</strong></td><td>Workspace region determines where data is stored. This is important for compliance (GDPR, local regulations)</td></tr>
+  <tr><td><strong>Resource Group</strong></td><td>Create or use a dedicated security resource group (e.g., <code>rg-security-sentinel</code>) for clean management</td></tr>
+  <tr><td><strong>Workspace Name</strong></td><td>Use a clear naming convention (e.g., <code>law-sentinel-prod-westeurope</code>) to distinguish from non-security workspaces</td></tr>
+  <tr><td><strong>Single vs. multiple workspaces</strong></td><td>Most organizations start with a single workspace. Use multiple only for data residency, RBAC boundaries, or multi-tenant scenarios</td></tr>
+  <tr><td><strong>Roles & permissions</strong></td><td>Use RBAC with least-privilege. Key roles: Sentinel Reader, Responder, Contributor. Use PIM for just-in-time access</td></tr>
+  <tr><td><strong>Pricing Tier</strong></td><td>Use <strong>Pay-As-You-Go</strong> to start. Switch to Commitment Tiers once daily ingestion volume is predictable (100 GB/day+)</td></tr>
+  <tr><td><strong>Retention</strong></td><td>First 90 days of interactive retention is <strong>free</strong> with Sentinel. Interactive retention can be extended up to <strong>730 days</strong> (2 years) at standard Log Analytics prices. For long-term/compliance needs, use <strong>total retention (data lake tier)</strong>, up to <strong>12 years</strong> at lower cost. You can also set different retention periods per table.</td></tr>
+</table>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/azure-monitor/logs/quick-create-workspace" target="_blank">Create a Log Analytics Workspace</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/best-practices-workspace-architecture" target="_blank">Workspace Architecture Best Practices</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/deploy-overview" target="_blank">Deployment Guide for Microsoft Sentinel</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/roles" target="_blank">Roles and Permissions in Microsoft Sentinel</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/azure-monitor/logs/cost-logs" target="_blank">Azure Monitor Logs Pricing</a></li>
+</ul>
+
+<h3>Step 2: Onboard Sentinel to Defender</h3>
+<p>The Microsoft Defender portal is the unified experience for Microsoft Sentinel. All new features ship in the Defender portal first.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Go to <code>security.microsoft.com</code> → Settings → Microsoft Sentinel → Connect your Log Analytics workspace
+</div>
+<div class="callout warning">
+<strong>⚠️ Transition deadline: March 2027.</strong> The Azure portal experience for Sentinel will be retired, and all new features ship exclusively in the Defender portal. If you haven't transitioned yet, plan the move now.
+</div>
+<div class="callout tip">
+<strong>Do all new configurations from the Defender portal, including data connectors, analytics, and automation.</strong>
+</div>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/move-to-defender" target="_blank">Transition Your Microsoft Sentinel Environment to the Defender Portal</a></li>
+</ul>
+
+<h3>Step 3: Review Workspace Settings</h3>
+<div class="callout tip">
+<strong>💡 Review these early, before connecting data sources.</strong> UEBA, anomalies, and health monitoring should be running when data starts flowing so Sentinel can build behavioral baselines and collect health metrics from day one.
+</div>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Go to <code>security.microsoft.com</code> → System → Settings → Microsoft Sentinel → SIEM workspaces → select the workspace → review the workspace setting sections.
+</div>
+<p>After you open the workspace, the key settings are on the same workspace configuration pane. Review these settings before data onboarding.</p>
+<table>
+  <tr><th>Setting</th><th>Description</th><th>Recommended value / action</th></tr>
+  <tr>
+    <td><strong>Incident correlation</strong></td>
+    <td>Controls how Sentinel and Defender XDR correlate related alerts and incidents across the unified security operations experience.</td>
+    <td>Keep enabled unless you have a specific incident-routing reason to disable it.</td>
+  </tr>
+  <tr>
+    <td><strong>Entity behavior analytics</strong></td>
+    <td>Builds behavioral profiles for users, hosts, IP addresses, and applications, then enriches investigations with anomalies, peer analysis, and entity context.</td>
+    <td>Enable UEBA. Sync Microsoft Entra ID, add on-premises Active Directory if Defender for Identity is deployed, and connect all eligible data sources where possible.</td>
+  </tr>
+  <tr>
+    <td><strong>Anomalies</strong></td>
+    <td>Turns on anomaly detection for the workspace so Sentinel can surface abnormal activity patterns beyond rule-based detections.</td>
+    <td>Enable <strong>Detect Anomalies</strong> after UEBA is configured.</td>
+  </tr>
+  <tr>
+    <td><strong>Workspace manager configuration</strong></td>
+    <td>Helps manage Sentinel content and configuration across multiple workspaces.</td>
+    <td>Use when operating multiple workspaces; for a single workspace, review and leave unconfigured until needed.</td>
+  </tr>
+  <tr>
+    <td><strong>Playbook permissions</strong></td>
+    <td>Controls whether Sentinel can run Logic Apps playbooks for automated response.</td>
+    <td>Grant permissions before enabling automation rules that call playbooks. Use least privilege and validate the managed identity or account used for automation.</td>
+  </tr>
+  <tr>
+    <td><strong>Auditing and health monitoring</strong></td>
+    <td>Creates SentinelHealth and SentinelAudit data so teams can monitor data connectors, analytics rules, automation rules, playbooks, and supported audit events.</td>
+    <td>Enable for the workspace and send monitoring data to the Sentinel Log Analytics workspace. Use diagnostic settings only when advanced destinations or scoped categories are required.</td>
+  </tr>
+  <tr>
+    <td><strong>Log Analytics settings</strong></td>
+    <td>Opens the underlying workspace settings for retention, tables, access, networking, and cost controls.</td>
+    <td>Confirm retention, table-level policies, RBAC, daily cap decisions, and network access before large-scale ingestion.</td>
+  </tr>
+  <tr>
+    <td><strong>Pricing</strong></td>
+    <td>Shows the Sentinel billing model for the workspace.</td>
+    <td>Start with Pay-As-You-Go if ingestion is unknown. Move to a commitment tier after daily ingestion is predictable.</td>
+  </tr>
+</table>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/enable-entity-behavior-analytics" target="_blank">Enable Entity Behavior Analytics</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/health-audit" target="_blank">Health and Audit in Microsoft Sentinel</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/enable-monitoring" target="_blank">Turn on Auditing and Health Monitoring</a></li>
+</ul>
+
+<h3>Step 4: Onboard Sentinel Data Lake</h3>
+<p>The data lake tier gives you a cost-effective option for long-term data retention and advanced capabilities (graphs, KQL jobs, MCP). You can mirror your existing ingestion exactly. <strong>Mirrored data incurs no extra costs</strong>.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Configuration → Settings → Data lake → Onboard
+</div>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/datalake/sentinel-lake-onboard-defender" target="_blank">Onboarding to Microsoft Sentinel Data Lake</a></li>
+</ul>
+
+<h3>Step 5: Content Hub: Your Solution Library</h3>
+
+<p>The <strong>Content Hub</strong> is Microsoft Sentinel's built-in marketplace. It's where you find, install, and manage <strong>solutions</strong>. These are pre-packaged bundles of security content built by Microsoft, partners, and the community. Think of it as an app store for your SIEM.</p>
+
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Content management → Content Hub
+</div>
+
+<div class="callout tip">
+<strong>💡 Why Content Hub matters:</strong> Instead of building detections, dashboards, and automations from scratch, you install a solution and get a complete security package for a specific product, threat, or compliance scenario, ready to activate in minutes.
+</div>
+
+<h4>What is a Solution?</h4>
+<p>A <strong>solution</strong> is a package that can contain any combination of the following assets, all designed to work together for a specific use case:</p>
+
+<table>
+  <tr><th>Asset Type</th><th>What It Is</th><th>Example</th></tr>
+  <tr>
+    <td><strong>Data Connector</strong></td>
+    <td>The pipeline that ingests logs from a data source into your Sentinel workspace</td>
+    <td>Microsoft Entra ID connector pulls sign-in and audit logs</td>
+  </tr>
+  <tr>
+    <td><strong>Analytic Rules</strong></td>
+    <td>Scheduled or real-time KQL queries that detect threats and create incidents automatically</td>
+    <td>"Brute force attack against Azure Portal" rule fires when multiple failed sign-ins are detected</td>
+  </tr>
+  <tr>
+    <td><strong>Workbooks</strong></td>
+    <td>Interactive dashboards that visualize security data for monitoring and reporting</td>
+    <td>Azure AD Sign-in workbook shows login trends, risky sign-ins, and MFA gaps</td>
+  </tr>
+  <tr>
+    <td><strong>Playbooks</strong></td>
+    <td>Logic Apps-based automated response workflows triggered by incidents or alerts</td>
+    <td>Auto-disable a compromised user account and notify the SOC via Teams</td>
+  </tr>
+  <tr>
+    <td><strong>Hunting Queries</strong></td>
+    <td>Proactive KQL queries used by analysts to search for threats that haven't triggered an alert yet</td>
+    <td>Hunt for unusual PowerShell execution patterns across endpoints</td>
+  </tr>
+  <tr>
+    <td><strong>Watchlists</strong></td>
+    <td>Reference lists (CSV-based) of entities like VIP users, critical IPs, or service accounts, used to enrich or filter alerts</td>
+    <td>VIP user watchlist to auto-escalate incidents involving executives</td>
+  </tr>
+  <tr>
+    <td><strong>Parsers</strong></td>
+    <td>KQL functions that normalize raw log data into a consistent schema (often ASIM-based)</td>
+    <td>Parser that normalizes firewall logs into the ASIM Network Session schema for cross-vendor queries</td>
+  </tr>
+</table>
+
+<div class="callout message">
+<strong>💡 Key concept:</strong> A single solution can contain <strong>all</strong> of these assets. For example, the <em>Microsoft Entra ID</em> solution includes a data connector, analytic rules, workbooks, hunting queries, and parsers, all in one install.
+</div>
+
+<h4>Priority Solutions to Install First</h4>
+
+<div class="callout warning">
+<strong>⚠️ Install order matters.</strong> Start with <strong>Microsoft first-party solutions</strong> you are already licensed for — they use native connectors, have zero or low ingestion cost, and provide the richest out-of-the-box detections. Then layer in infrastructure and third-party sources.
+</div>
+
+<h5>Phase 1: Microsoft First-Party Solutions (Install These First)</h5>
+<p>These are the solutions for Microsoft products you already own. Each solution bundles a data connector, analytic rules, workbooks, and hunting queries. Install only the ones that match your licensing.</p>
+
+<table>
+  <tr><th>Solution</th><th>What You Get</th><th>Licensing Note</th></tr>
+  <tr>
+    <td><strong>Microsoft Defender XDR</strong></td>
+    <td>Syncs <strong>incidents and alerts</strong> from the entire Defender stack into Sentinel via bi-directional incident sync. You can also stream <strong>advanced hunting raw event tables</strong> from each licensed workload (MDE, MDO, MDI, MDA).<br><br>
+    <strong>Important:</strong> There is no single "XDR connector" — a separate connector exists for each Defender workload. Enable incident sync first, then toggle on event tables per product. <a href="https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender" target="_blank">See full connector setup guide →</a></td>
+    <td>Microsoft 365 E5 or E5 Security add-on. Individual Defender plans can be licensed separately.</td>
+  </tr>
+  <tr>
+    <td><strong>Microsoft Entra ID</strong></td>
+    <td>Analytic rules for sign-in anomalies, risky users, privilege escalation, MFA bypass, disabled account abuse + workbooks + hunting queries. Connects <code>SigninLogs</code>, <code>AuditLogs</code>, <code>AADNonInteractiveUserSignInLogs</code>, and more.</td>
+    <td>Any Microsoft Entra ID (Azure AD) license. P1/P2 for richer sign-in data (risky sign-ins, conditional access).</td>
+  </tr>
+  <tr>
+    <td><strong>Azure Activity</strong></td>
+    <td>Detections for suspicious Azure resource operations, RBAC changes, policy modifications, resource deletions. <strong>Free ingestion</strong> — no cost to enable.</td>
+    <td>Any Azure subscription (free data source).</td>
+  </tr>
+  <tr>
+    <td><strong>Microsoft Defender for Cloud</strong></td>
+    <td>Security alerts and recommendations from Defender for Cloud plans (Servers, Storage, SQL, App Service, Key Vault, etc.). Streams alerts into Sentinel for correlation with other signals.</td>
+    <td>Requires Defender for Cloud plans enabled on Azure subscriptions.</td>
+  </tr>
+  <tr>
+    <td><strong>Microsoft 365</strong> (Office 365)</td>
+    <td>Exchange, SharePoint, and Teams audit logs. Detects mailbox rule abuse, data exfiltration via SharePoint, and suspicious Teams activity. <strong>Free ingestion</strong> for Office 365 audit logs.</td>
+    <td>Any Microsoft 365 license with audit logging enabled.</td>
+  </tr>
+</table>
+
+<h5>Phase 2: Essential Security Add-ons</h5>
+<p>These solutions add critical capabilities regardless of which Microsoft products are licensed.</p>
+
+<table>
+  <tr><th>Solution</th><th>What You Get</th><th>Why It Matters</th></tr>
+  <tr>
+    <td><strong>Threat Intelligence</strong></td>
+    <td>TI matching analytic rules + IOC management workbooks. Two key connectors to enable:<br>
+    • <strong>Microsoft Defender Threat Intelligence (MDTI)</strong> — Microsoft's own threat intel (public IOCs free; curated IOCs with premium license)<br>
+    • <strong>Threat Intelligence - TAXII</strong> — connects to external STIX/TAXII 2.x feeds from third-party providers<br>
+    Enable both for maximum coverage.</td>
+    <td>Critical for detecting known-bad IOCs across all your data sources. Without TI, you miss zero-day indicators and known malicious infrastructure.</td>
+  </tr>
+  <tr>
+    <td><strong>UEBA Essentials</strong></td>
+    <td>User and Entity Behavior Analytics rules and hunting queries. Profiles normal behavior for users and entities, then flags anomalies like impossible travel, unusual resource access, and lateral movement.</td>
+    <td>Catches insider threats and compromised accounts that rule-based detections miss. Requires Entra ID and/or Active Directory logs to build behavior profiles.</td>
+  </tr>
+  <tr>
+    <td><strong>Windows Security Events</strong></td>
+    <td>Analytic rules and hunting queries for Windows event logs (logon events, process creation, privilege use, audit policy changes). Uses the <strong>Windows Security Events via AMA</strong> connector with Data Collection Rules to filter which events to collect.</td>
+    <td>Essential for on-prem and hybrid environments. Windows endpoints are the most targeted attack surface.</td>
+  </tr>
+  <tr>
+    <td><strong>Common Event Format (CEF)</strong></td>
+    <td>A universal connector for third-party appliances (firewalls, WAFs, IDS/IPS, proxies) that output CEF-formatted syslog. Uses a Linux log forwarder with the AMA agent to stream logs into the <code>CommonSecurityLog</code> table.</td>
+    <td>The primary way to get non-Microsoft network security appliance data into Sentinel. Covers Palo Alto, Fortinet, Check Point, F5, Cisco ASA, and dozens more.</td>
+  </tr>
+  <tr>
+    <td><strong>Syslog</strong></td>
+    <td>Collects raw syslog from Linux servers, network devices, and appliances that don't support CEF. Ingests into the <code>Syslog</code> table.</td>
+    <td>Catch-all for Linux infrastructure and legacy devices. Use CEF where available; fall back to Syslog for everything else.</td>
+  </tr>
+</table>
+
+<h3>Step 6: Connect & Ingest Your Data</h3>
+
+<p>Installing a solution from Content Hub gives you the assets — but <strong>connectors still need to be configured</strong> and data sources authorized before logs actually flow. This step is where you turn installed solutions into live data pipelines.</p>
+
+<div class="callout warning">
+<strong>⚠️ Collection is not detection.</strong> Before enabling connectors, decide what data your SOC actually needs for detection, investigation, and hunting. Not everything needs to be ingested into the same tier.
+</div>
+
+<h5>Plan Your Ingestion Tiers</h5>
+<p>Classify each data source to balance security coverage against cost:</p>
+<table>
+  <tr><th>Category</th><th>What it is</th><th>Examples</th><th>Where to store</th></tr>
+  <tr>
+    <td><strong>Primary security data</strong></td>
+    <td>Critical security value — real-time detection, scheduled alerts, behaviour analytics, correlation. Must be readily available.</td>
+    <td>Authentication logs, EDR/antivirus logs, cloud audit trails, threat intelligence feeds, security alerts</td>
+    <td><strong>Analytics tier</strong> (90 days free, up to 2 years interactive)</td>
+  </tr>
+  <tr>
+    <td><strong>Secondary security data</strong></td>
+    <td>Supplemental, often high-volume. Limited real-time value but essential for investigations. Access on-demand.</td>
+    <td>Cloud storage access logs, NetFlow, TLS/SSL certificate logs, firewall logs, proxy logs, IoT logs</td>
+    <td><strong>Data lake tier</strong> (cost-effective long-term, up to 12 years)</td>
+  </tr>
+</table>
+
+<h5>Enable Connectors: 5-Point Checklist</h5>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Configuration → Data connectors → Open connector page → Connect
+</div>
+<p>Before you flip the switch on each connector, run through these checks:</p>
+<table>
+  <tr><th>#</th><th>Check</th><th>Why</th></tr>
+  <tr>
+    <td><strong>1</strong></td>
+    <td><strong>Free data source?</strong> Azure Activity, Office 365 audit logs, and Defender security alerts cost nothing to ingest. Enable these first. <a href="https://learn.microsoft.com/en-us/azure/sentinel/billing#free-data-sources" target="_blank">Full free list →</a></td>
+    <td>Quick wins, zero budget impact.</td>
+  </tr>
+  <tr>
+    <td><strong>2</strong></td>
+    <td><strong>Product licensed and in use?</strong> A connector without an active product behind it produces no data.</td>
+    <td>Avoids broken connectors.</td>
+  </tr>
+  <tr>
+    <td><strong>3</strong></td>
+    <td><strong>Maps to a threat scenario?</strong> Identity threats → sign-in logs. Endpoint threats → device logs. Cloud threats → activity logs.</td>
+    <td>Ingestion should drive detections, not just volume.</td>
+  </tr>
+  <tr>
+    <td><strong>4</strong></td>
+    <td><strong>Cost estimated?</strong> Use the <a href="https://microsoft.com/en-us/security/pricing/microsoft-sentinel/cost-estimator" target="_blank">Sentinel cost estimator</a> before connecting high-volume sources.</td>
+    <td>Prevents bill shock.</td>
+  </tr>
+  <tr>
+    <td><strong>5</strong></td>
+    <td><strong>Data flowing?</strong> After connecting, check connector status and run <code>TableName | take 10</code> to confirm.</td>
+    <td>Catches silent failures early.</td>
+  </tr>
+</table>
+
+<h5>Complete the Rest of the Solution</h5>
+<ol>
+  <li><strong>Activate analytic rules:</strong> Installed rules are templates until you activate them (see Step 8).</li>
+  <li><strong>Check playbooks:</strong> Some need API connections configured before they'll work (see Step 8).</li>
+  <li><strong>Review workbooks:</strong> Explore the dashboards that came with the solution (see Step 10).</li>
+</ol>
+
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/sentinel-solutions-deploy" target="_blank">Discover and Deploy Content from Content Hub</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/sentinel-solutions-catalog" target="_blank">Content Hub Catalog: Full List of Solutions</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/connect-data-sources" target="_blank">Microsoft Sentinel Data Connectors</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/prioritize-data-connectors" target="_blank">Prioritize Your Data Connectors (Official Guide)</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/best-practices-data" target="_blank">Best Practices for Data Collection</a></li>
+</ul>
+
+<h3>Step 7: Configure Watchlists</h3>
+<p>A <strong>watchlist</strong> is a reference list you upload to Sentinel (as a CSV) containing entities your organization cares about, such as VIP users, critical servers, trusted IP ranges, service accounts, terminated employees, or any custom list. Once uploaded, you can reference watchlists in analytic rules, hunting queries, and workbooks using the <code>_GetWatchlist('watchlistname')</code> KQL function.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Configuration → Watchlist → + Add new → Upload CSV → Create
+</div>
+<p>Use watchlists to reduce false positives (e.g., exclude known service accounts from sign-in alerts), increase severity for high-value targets (e.g., auto-escalate incidents involving executives), or enrich investigations with business context that doesn't exist in raw logs.</p>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/watchlists" target="_blank">Create and Use Watchlists</a></li>
+</ul>
+
+<h3>Step 8: Detect & Respond</h3>
+
+<h4>Analytic Rules: Your Detection Engine</h4>
+<p><strong>Analytic rules</strong> are scheduled KQL queries that scan your logs for threat patterns and create incidents when conditions match. Content Hub solutions install them as templates. You activate the ones relevant to your environment. This is where Sentinel starts detecting threats.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Configuration → Analytics → Rule Templates → Select rule → Create rule
+</div>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/threat-detection" target="_blank">Threat Detection in Microsoft Sentinel</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-built-in" target="_blank">Detect Threats with Built-In Analytic Rules</a></li>
+</ul>
+
+<h4>Automation Rules and Playbooks: Your Response Engine</h4>
+<p><strong>Automation rules</strong> triage incidents the moment analytic rules create them. They assign owners, set severity, add tags, run playbooks. <strong>Playbooks</strong> are Logic Apps workflows that take action: isolate devices, revoke sessions, notify Teams, create tickets.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Automation → Automation rules → + Create<br>
+For playbooks: Automation → Active playbooks → + Add playbook
+</div>
+<p>See the <strong>🔧 Rules & Automation</strong> tab for the full breakdown of rule types, automation rules, playbooks, and AI-generated playbooks.</p>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/automation/automation" target="_blank">Automation in Microsoft Sentinel</a></li>
+</ul>
+
+<h3>Step 9: Hunting: Proactive Threat Discovery</h3>
+<p><strong>Hunting</strong> is the proactive side. Analysts search for threats that analytic rules haven't caught. When a hunting query consistently finds real threats, promote it to an analytic rule: select results → <strong>New alert rule → Create Microsoft Sentinel alert</strong>.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Threat management → Hunting → Queries tab
+</div>
+
+<table>
+  <tr><th>Capability</th><th>What It Does</th></tr>
+  <tr><td><strong>Hunting Queries</strong></td><td>Pre-built and custom KQL queries that search for suspicious activity. Content Hub solutions include dozens mapped to MITRE ATT&CK</td></tr>
+  <tr><td><strong>Bookmarks</strong></td><td>Preserve interesting results as evidence, tag entities, link findings to incidents</td></tr>
+  <tr><td><strong>Hunts (Preview)</strong></td><td>End-to-end workflow: define hypothesis → run queries → bookmark → investigate → create rules or incidents from findings</td></tr>
+</table>
+
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/hunting" target="_blank">Threat Hunting in Microsoft Sentinel</a></li>
+</ul>
+
+<h3>Step 10: Workbooks: Dashboards and Visibility</h3>
+<p><strong>Workbooks</strong> are interactive, visual dashboards built on your Sentinel data. They let you monitor security posture, track ingestion health, investigate trends, and share reports, all without writing KQL from scratch. Many come pre-installed with Content Hub solutions; others can be added standalone.</p>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Threat management → Workbooks → Templates or My workbooks
+</div>
+
+<h4>Recommended Standalone Workbooks</h4>
+<p>Beyond the workbooks that come with Content Hub solutions, install these for operational visibility:</p>
+<table>
+  <tr><th>Workbook</th><th>What It Helps With</th></tr>
+  <tr><td><strong>Analytics Health & Audit</strong></td><td>Monitor whether your analytic rules are running as expected. See failures, delays, and a full change log of rule modifications</td></tr>
+  <tr><td><strong>Automation Health</strong></td><td>Track the health of automation rules and playbook executions. Tracks trigger success/failure rates, run details, and error diagnostics</td></tr>
+  <tr><td><strong>Data Collection Health Monitoring</strong></td><td>Monitor data connector ingestion status. Tracks ingestion volumes, latency, anomalies, and silent failures across all connected sources</td></tr>
+  <tr><td><strong>Workspace Usage Report</strong></td><td>Understand your data ingestion volumes and costs. Essential for cost management and commitment tier decisions</td></tr>
+  <tr><td><strong>Log Sources & Analytic Rules Coverage</strong></td><td>See which log sources are connected and which have detection rules. Helps find coverage gaps</td></tr>
+  <tr><td><strong>Microsoft Sentinel Optimization Workbook</strong></td><td>Identify optimization opportunities. Identifies unused tables, inefficient rules, cost savings</td></tr>
+  <tr><td><strong>Incident Overview</strong></td><td>In-depth incident triage and investigation. Covers general info, entity data, triage time, mitigation time, and comments</td></tr>
+  <tr><td><strong>Security Operations Efficiency</strong></td><td>Overall SOC performance metrics. Includes mean time to triage, mean time to close, incidents by severity, analyst workload</td></tr>
+</table>
+<div class="callout tip">
+<strong>💡 Install standalone workbooks from:</strong> Defender Portal → Microsoft Sentinel → Content Hub → search by workbook name → Install
+</div>
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/monitor-your-data" target="_blank">Visualize and Monitor Your Data Using Workbooks</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/top-workbooks" target="_blank">Commonly Used Microsoft Sentinel Workbooks</a></li>
+</ul>
+
+<h3>Step 11: Assess & Improve Security Posture</h3>
+<p>Once your detections, automation, and hunting are in place, use these two built-in tools to <strong>measure and continuously improve</strong> your security posture.</p>
+
+<h4>SOC Optimization</h4>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Threat management → SOC optimization
+</div>
+<p><strong>SOC Optimization</strong> gives you actionable, data-driven recommendations to improve your security operations. Sentinel analyzes your actual environment, including ingestion patterns, active rules, and MITRE coverage, and tells you exactly what to fix: missing connectors, unused data, coverage gaps, and cost-saving opportunities.</p>
+
+<h4>MITRE ATT&CK Coverage</h4>
+<div class="callout portal">
+<strong>📍 Portal path:</strong> Defender Portal → Microsoft Sentinel → Threat management → MITRE ATT&CK
+</div>
+<p>The <strong>MITRE ATT&CK</strong> page maps your active analytic rules to the MITRE ATT&CK framework, showing which tactics and techniques you can detect, and where you have gaps. Use this to validate your detection coverage against real-world attack patterns.</p>
+
+<div class="callout tip">
+<strong>💡 Use them together, review monthly.</strong> SOC Optimization tells you <em>what to fix</em>; MITRE coverage shows you <em>what you can't see</em>. Together they give you a complete picture of your security posture. Revisit after every major change (new connectors, new rules, new data sources).
+</div>
+
+<ul>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/soc-optimization/soc-optimization-access" target="_blank">Optimize Security Operations with SOC Optimization</a></li>
+  <li>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/mitre-coverage" target="_blank">View MITRE ATT&CK Coverage for Your Organization</a></li>
+</ul>
+
+<h3>What's Next?</h3>
+<p>Explore the other tabs for deeper walkthroughs and reference material:</p>
+<table>
+  <tr><th>Tab</th><th>What You'll Learn</th></tr>
+  <tr><td>📋 <strong>Use Cases</strong></td><td>End-to-end walkthroughs: two real scenarios from detection to automated response</td></tr>
+  <tr><td>🔧 <strong>Rules & Automation</strong></td><td>The full pipeline diagram + summary rules, analytic rules, automation rules, playbooks, AI-generated playbooks</td></tr>
+  <tr><td>🛡️ <strong>Sentinel Platform</strong></td><td>Data lake features: KQL jobs, search jobs, custom graphs, MCP server</td></tr>
+  <tr><td>📚 <strong>Resources & Pricing</strong></td><td>Best practices, workbooks, Ninja training, pricing calculators</td></tr>
+</table>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: CAPABILITIES OVERVIEW                 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="overview">
+
+<h2>Use Cases: End-to-End Walkthroughs</h2>
+
+<p>These two use cases show how Sentinel's layers work together, from detection to automated response. Each walks through the same pipeline: Content Hub → Summary Rules → Analytic Rules → Automation Rules → Playbooks → AI Playbooks.</p>
+
+<h2>Two Use Cases</h2>
+<table>
+  <tr><th></th><th><span class="uc uc1">UC1</span> Impossible Travel</th><th><span class="uc uc2">UC2</span> Disabled User Sign-In</th></tr>
+  <tr><td><strong>Scenario</strong></td><td>User signs in from Nairobi, then São Paulo 10 min later</td><td>Terminated employee account attempts authentication</td></tr>
+  <tr><td><strong>Risk</strong></td><td>Credential theft</td><td>Deprovisioning gap / credential reuse</td></tr>
+  <tr><td><strong>MITRE</strong></td><td>Initial Access (T1078)</td><td>Persistence (T1078.004)</td></tr>
+</table>
+
+<h2>Layer-by-Layer Walkthrough</h2>
+
+<h3>1. Content Hub → Analytic Rules</h3>
+<ul>
+  <li>Install <strong>"Microsoft Entra ID"</strong> solution → built-in rule templates</li>
+  <li><span class="uc uc1">UC1</span> Activate "Anomalous sign-in location by user account". Detects geo anomalies</li>
+  <li><span class="uc uc2">UC2</span> Activate "Attempts to sign in to disabled accounts". Catches ResultType 50057</li>
+</ul>
+<div class="callout message"><strong>💡 Tip:</strong> You don't write rules from scratch. Activate templates and detections run in minutes.</div>
+
+<h3>2. Summary Rules → Cost + Speed</h3>
+<ul>
+  <li><span class="uc uc1">UC1</span> Hourly geo summary per user → analytic rule queries in seconds not minutes</li>
+  <li><span class="uc uc2">UC2</span> Daily disabled account rollup → compliance reports at zero query cost</li>
+</ul>
+<div class="callout message"><strong>💡 Tip:</strong> Summary rules compress TB into KB — same detections, 100x faster, at a fraction of the cost.</div>
+
+<h3>3. Automation Rules → Instant Triage</h3>
+<table>
+  <tr><th>Action</th><th><span class="uc uc1">UC1</span></th><th><span class="uc uc2">UC2</span></th></tr>
+  <tr><td>Severity</td><td>→ High</td><td>→ Medium</td></tr>
+  <tr><td>Assign</td><td>→ SOC Tier 2</td><td>→ Identity team</td></tr>
+  <tr><td>Tag</td><td>"ImpossibleTravel"</td><td>"DeprovisioningGap"</td></tr>
+  <tr><td>Tasks</td><td>☑ Verify location ☑ Check MFA</td><td>☑ Confirm disabled ☑ Check sessions</td></tr>
+  <tr><td>Playbook</td><td>→ Isolate-CompromisedUser</td><td>→ Block-DisabledUser</td></tr>
+</table>
+<div class="callout message"><strong>💡 Tip:</strong> Automation rules act as your SOC manager — they triage every incident automatically.</div>
+
+<h3>4. Playbooks → Take Action</h3>
+<table>
+  <tr><th>Action</th><th><span class="uc uc1">UC1</span></th><th><span class="uc uc2">UC2</span></th></tr>
+  <tr><td>Identity</td><td>Revoke sessions, force MFA</td><td>Confirm disabled, revoke tokens</td></tr>
+  <tr><td>Endpoint</td><td>Isolate device</td><td>N/A</td></tr>
+  <tr><td>Network</td><td>N/A</td><td>Block source IP</td></tr>
+  <tr><td>Notify</td><td>Teams → SOC channel</td><td>Teams → HR + Security</td></tr>
+  <tr><td>Ticket</td><td>Create ServiceNow incident</td><td>Create Jira ticket</td></tr>
+</table>
+<div class="callout message"><strong>💡 Tip:</strong> Playbooks act as your SOC analyst — they call APIs, block threats, and notify humans.</div>
+
+<h3>5. AI-Generated Playbooks → Vibe-Coded SOAR</h3>
+<ul>
+  <li><strong>Where:</strong> Defender Portal → Automation → Playbooks → Create → Playbook Generator</li>
+  <li>Describe in English → Cline AI generates Python + docs + flow diagram</li>
+  <li>Test with a real alert ID inside the portal</li>
+</ul>
+<div class="callout message"><strong>💡 Tip:</strong> No coding needed. Describe what you want and get working automation in minutes.</div>
+
+<p>For detailed pricing, see the <strong>📚 Resources & Pricing</strong> tab. For data lake features (KQL Jobs, Search Jobs, MCP, Graphs), see the <strong>🛡️ Sentinel Platform</strong> tab.</p>
+
+<h2>Key Concepts at a Glance</h2>
+<blockquote><strong>Content Hub</strong>: Don't write from scratch. Built-in detections, activate in minutes.</blockquote>
+<blockquote><strong>Summary Rules</strong>: Same detections, 100x faster, fraction of the cost.</blockquote>
+<blockquote><strong>Automation Rules</strong>: Act as your SOC manager — triage every incident automatically.</blockquote>
+<blockquote><strong>Playbooks</strong>: Act as your SOC analyst — take action by blocking, notifying, and remediating.</blockquote>
+<blockquote><strong>AI Playbooks</strong>: Build new automation in minutes by describing what you want in English.</blockquote>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: RULES (Summary + Analytic)            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="rules">
+
+<h2>Rules and Automation: The Full Pipeline</h2>
+
+<div class="pipeline">
+<span class="node">Raw Logs</span> <span class="desc">(SigninLogs, TB/day)</span>
+     │
+     ├──────────────────────────────────────────────────┐
+     │                                                  │
+     ▼                                                  ▼
+┌──────────────────┐                          ┌──────────────────┐
+│  <span class="node">Direct Path</span>      │                          │  <span class="node">Optimized Path</span>  │
+│                  │                          │  <span class="desc">(high-volume)</span>    │
+└────────┬─────────┘                          └────────┬─────────┘
+         │                                             │
+         │                                    ┌────────┴─────────┐
+         │                                    │  <span class="node">Summary Rules</span>    │  <span class="desc">Compress TB → lean tables</span>
+         │                                    └────────┬─────────┘
+         │                                             │
+         └──────────────────┬──────────────────────────┘
+                            │
+                            ▼
+                  ┌──────────────────┐
+                  │  <span class="node">Analytic Rules</span>   │  <span class="desc">Content Hub: built-in detections out-of-box</span>
+                  └────────┬─────────┘  <span class="desc">Queries raw logs OR summary tables</span>
+                           │
+                           ▼
+                  ┌──────────────────┐
+                  │  <span class="node">Automation Rules</span> │  <span class="desc">Triage: assign, tag, severity, tasks</span>
+                  └────────┬─────────┘
+                           │
+                           ▼
+                  ┌──────────────────┐
+                  │  <span class="node">Playbooks</span>        │  <span class="desc">SOAR: Logic Apps or AI-generated (vibe-coded)</span>
+                  └──────────────────┘
+</div>
+
+<h2>When to Use What</h2>
+<table>
+  <tr>
+    <th></th>
+    <th>Summary Rules</th>
+    <th>Analytic Rules</th>
+    <th>Automation Rules</th>
+    <th>Playbooks (Logic Apps)</th>
+    <th>Vibe-Coded Playbooks</th>
+  </tr>
+  <tr>
+    <td><strong>What it is</strong></td>
+    <td>Scheduled KQL query that aggregates high-volume raw logs into compact custom tables. Runs in the background on a schedule you set</td>
+    <td>Scheduled KQL query that scans logs for threat patterns and creates an incident or alert when conditions match. Your detection engine</td>
+    <td>No-code if/then rules that auto-triage incidents and alerts. Set severity, assign owners, add tasks, suppress noise, and trigger playbooks, all from the portal UI</td>
+    <td>Automated workflows built on Azure Logic Apps with 400+ connectors. Call APIs, isolate devices, send Teams/email notifications, create tickets, and update incidents</td>
+    <td>AI-generated Python playbooks built through natural language chat with Cline. Describe your automation in English inside the Defender portal, get tested code with documentation and flow diagrams</td>
+  </tr>
+  <tr>
+    <td><strong>Purpose</strong></td>
+    <td>Compress TB → lean custom tables</td>
+    <td>Detect threats → create incidents/alerts</td>
+    <td>Triage incidents & alerts automatically</td>
+    <td>Take action: block, notify, enrich, remediate</td>
+    <td>Same as playbooks, built with natural language</td>
+  </tr>
+  <tr>
+    <td><strong>Example</strong></td>
+    <td><span class="uc uc1">UC1</span> Instead of scanning 5 million raw sign-in rows every hour, a summary rule crunches them down to one row per user: "Jane signed in from 3 cities, 4 IPs, between 9am-10am." The analytic rule then queries this tiny table in seconds to spot impossible travel.<br><br><span class="uc uc2">UC2</span> Raw logs show every single failed sign-in. The summary rule creates a daily digest: "Disabled account john@contoso.com had 12 attempts from 2 IPs targeting Outlook, Teams, and SharePoint." One row instead of 12.</td>
+    <td><span class="uc uc1">UC1</span> "User signed in from Nairobi, then São Paulo 10 min later" → creates High severity incident<br><br><span class="uc uc2">UC2</span> "Disabled account attempted sign-in 15 times from 3 IPs" → creates Medium incident</td>
+    <td><span class="uc uc1">UC1</span> Incident created → auto-set severity High, assign SOC Tier 2, add task "Verify user location", trigger playbook<br><br><span class="uc uc2">UC2</span> Alert fires → tag "DeprovisioningGap", assign Identity team, auto-close if known service account</td>
+    <td><span class="uc uc1">UC1</span> Revoke user sessions via Graph API, force MFA re-registration, isolate device via MDE, post Teams alert to SOC<br><br><span class="uc uc2">UC2</span> Confirm account disabled, revoke active sessions, block source IP, email HR + Security team</td>
+    <td><span class="uc uc1">UC1</span> Tell Cline: "On impossible travel alerts, revoke sessions, reset MFA, isolate device, notify SOC" → working Python in minutes<br><br><span class="uc uc2">UC2</span> Tell Cline: "Check if account is disabled. If yes revoke, if no escalate to High" → AI handles conditional logic</td>
+  </tr>
+  <tr>
+    <td><strong>Trigger</strong></td>
+    <td>Schedule (20 min – 24 hrs)</td>
+    <td>Schedule (5 min – 24 hrs) or NRT (&lt;1 min)</td>
+    <td>Incident created/updated, <strong>Alert created</strong>, Enhanced Alert Trigger</td>
+    <td>Called by automation rules</td>
+    <td>Enhanced Alert Trigger</td>
+  </tr>
+  <tr>
+    <td><strong>Output</strong></td>
+    <td>Custom table (<code>_CL</code>) in Analytics tier</td>
+    <td>Incident / Alert with entity mapping</td>
+    <td>Modified incident (severity, owner, tags, tasks)</td>
+    <td>API calls, notifications, tickets, incident comments</td>
+    <td>Same as playbooks</td>
+  </tr>
+  <tr>
+    <td><strong>Code?</strong></td>
+    <td>KQL query</td>
+    <td>KQL query + entity mapping</td>
+    <td>❌ No code, portal UI only</td>
+    <td>❌ Visual designer (drag-and-drop)</td>
+    <td>❌ Natural language → Python</td>
+  </tr>
+  <tr>
+    <td><strong>Content Hub?</strong></td>
+    <td>✅ Templates</td>
+    <td>✅ Built-in analytics rules</td>
+    <td>N/A</td>
+    <td>✅ Ready-made playbooks</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td><strong>Cost</strong></td>
+    <td><span class="price-free">Free</span> (Analytics); scan cost (Basic/Aux)</td>
+    <td><span class="price-free">Free (included)</span></td>
+    <td><span class="price-free">Free (included)</span></td>
+    <td><span class="price-paid">Logic Apps consumption</span></td>
+    <td><span class="price-paid">Security Copilot</span> (free in preview)</td>
+  </tr>
+</table>
+
+<div class="callout tip"><strong>💡 How they chain:</strong> Raw Logs → <em>[optional: Summary Rule to compress]</em> → Analytic Rule (detect) → Automation Rule (triage) → Playbook (act). Not every customer needs summary rules. Many go directly from raw logs to analytic rules.</div>
+
+<div class="callout message"><strong>📌 Note:</strong> Content Hub includes built-in templates for summary rules, analytic rules, and playbooks. For how to install and activate them, see <a href="#" onclick="document.querySelector('[data-tab=getstarted]').click(); return false;" style="color:var(--primary); text-decoration:underline;"><strong>🚀 Getting Started → Step 5: Content Hub</strong></a>. The sections below focus on customizing and building your own.</div>
+
+<!-- ─── SUMMARY RULES ──────────────────────── -->
+<h2 style="margin-top:32px">📊 Summary Rules: Compress for Speed and Cost</h2>
+
+<p>Summary rules aggregate high-volume log data in the background into lean custom tables. Instead of analytic rules scanning millions of raw rows every run, they query a small pre-computed table — faster results, lower query costs, same detection quality. They work across all log tiers (Analytics, Basic, and Auxiliary). Pipeline: <strong>Summary Rule → Custom Table → Analytic Rule → Incident</strong>.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/summary-rules" target="_blank">Learn more: Aggregate data with summary rules</a></p>
+
+<p>Using our two use cases as examples:</p>
+
+<h4><span class="uc uc1">UC1</span> Sign-In Geo Summary</h4>
+<table>
+  <tr><th>Setting</th><th>Value</th></tr>
+  <tr><td>Destination table</td><td><code>SignIn_GeoSummary_CL</code> (Analytics tier)</td></tr>
+  <tr><td>Schedule</td><td>Every 1 hour</td></tr>
+  <tr><td>Purpose</td><td>Per-user location fingerprint for impossible travel</td></tr>
+</table>
+<details><summary><strong>📝 View KQL: Sign-In Geo Summary</strong></summary>
+<pre><code>SigninLogs
+| <span class="keyword">extend</span>
+    City = <span class="func">tostring</span>(LocationDetails.city),
+    Country = <span class="func">tostring</span>(LocationDetails.countryOrRegion),
+    Lat = <span class="func">toreal</span>(LocationDetails.geoCoordinates.latitude),
+    Lon = <span class="func">toreal</span>(LocationDetails.geoCoordinates.longitude)
+| <span class="keyword">summarize</span>
+    SignInCount = <span class="func">count</span>(),
+    DistinctIPs = <span class="func">dcount</span>(IPAddress),
+    DistinctLocations = <span class="func">dcount</span>(<span class="func">strcat</span>(City, Country)),
+    IPs = <span class="func">make_set</span>(IPAddress, 20),
+    Locations = <span class="func">make_set</span>(<span class="func">strcat</span>(City, <span class="string">", "</span>, Country), 10),
+    AvgLat = <span class="func">avg</span>(Lat), AvgLon = <span class="func">avg</span>(Lon),
+    MinTime = <span class="func">min</span>(TimeGenerated), MaxTime = <span class="func">max</span>(TimeGenerated)
+    <span class="keyword">by</span> UserPrincipalName, <span class="func">bin</span>(TimeGenerated, 1h)
+| <span class="keyword">extend</span> MultiLocationFlag = <span class="func">iff</span>(DistinctLocations > 1, true, false)</code></pre>
+</details>
+
+<h4><span class="uc uc2">UC2</span> Disabled User Activity Summary</h4>
+<table>
+  <tr><th>Setting</th><th>Value</th></tr>
+  <tr><td>Destination table</td><td><code>DisabledUserActivity_CL</code> (Analytics tier)</td></tr>
+  <tr><td>Schedule</td><td>Every 24 hours</td></tr>
+  <tr><td>Purpose</td><td>Daily rollup of disabled account sign-in attempts</td></tr>
+</table>
+<details><summary><strong>📝 View KQL: Disabled User Activity Summary</strong></summary>
+<pre><code>SigninLogs
+| <span class="keyword">where</span> TimeGenerated > <span class="func">ago</span>(1d)
+| <span class="keyword">where</span> ResultType == 50057
+| <span class="keyword">summarize</span>
+    DailyAttempts = <span class="func">count</span>(),
+    UniqueIPs = <span class="func">dcount</span>(IPAddress),
+    UniqueApps = <span class="func">dcount</span>(AppDisplayName),
+    SourceIPs = <span class="func">make_set</span>(IPAddress, 20),
+    TargetApps = <span class="func">make_set</span>(AppDisplayName, 10)
+    <span class="keyword">by</span> UserPrincipalName, <span class="func">bin</span>(TimeGenerated, 1d)
+| <span class="keyword">extend</span> RiskScore = <span class="func">case</span>(
+    DailyAttempts >= 10 <span class="keyword">or</span> UniqueIPs >= 3, 3,
+    DailyAttempts >= 5, 2, 1)</code></pre>
+</details>
+
+<!-- ─── ANALYTIC RULES ─────────────────────── -->
+<h2 style="margin-top:32px">🔍 Analytic Rules: Your Detection Engine</h2>
+
+<p>Analytic rules are scheduled KQL queries that scan your logs for threat patterns and create incidents when conditions match.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-built-in" target="_blank">Learn more: Detect threats with built-in analytic rules</a></p>
+
+<p>Using our use cases as examples, here's how to tune built-in rules for your environment:</p>
+
+<h4><span class="uc uc1">UC1</span> Tuned: Impossible Travel with Geo-Distance</h4>
+<p>WHY: Built-in flags unfamiliar locations. This adds distance calculation to reduce false positives.</p>
+<details><summary><strong>📝 View KQL: Impossible Travel (Tuned)</strong></summary>
+<pre><code><span class="keyword">let</span> TimeWindow = 30m;
+<span class="keyword">let</span> DistanceThresholdKm = 500;
+SigninLogs
+| <span class="keyword">where</span> TimeGenerated > <span class="func">ago</span>(1d)
+| <span class="keyword">where</span> ResultType == 0  <span class="comment">// Successful sign-ins only</span>
+| <span class="keyword">extend</span>
+    City = <span class="func">tostring</span>(LocationDetails.city),
+    Country = <span class="func">tostring</span>(LocationDetails.countryOrRegion),
+    Lat = <span class="func">toreal</span>(LocationDetails.geoCoordinates.latitude),
+    Lon = <span class="func">toreal</span>(LocationDetails.geoCoordinates.longitude)
+| <span class="keyword">where</span> <span class="func">isnotempty</span>(Lat) <span class="keyword">and</span> <span class="func">isnotempty</span>(Lon)
+| <span class="keyword">project</span> TimeGenerated, UserPrincipalName, IPAddress,
+          City, Country, Lat, Lon, AppDisplayName
+| <span class="keyword">sort by</span> UserPrincipalName <span class="keyword">asc</span>, TimeGenerated <span class="keyword">asc</span>
+| <span class="keyword">serialize</span>
+| <span class="keyword">extend</span> PrevTime = <span class="func">prev</span>(TimeGenerated),
+         PrevUser = <span class="func">prev</span>(UserPrincipalName),
+         PrevIP = <span class="func">prev</span>(IPAddress),
+         PrevLat = <span class="func">prev</span>(Lat), PrevLon = <span class="func">prev</span>(Lon)
+| <span class="keyword">where</span> UserPrincipalName == PrevUser <span class="keyword">and</span> IPAddress != PrevIP
+| <span class="keyword">extend</span> TimeDelta = TimeGenerated - PrevTime
+| <span class="keyword">where</span> TimeDelta <span class="keyword">between</span> (1m .. TimeWindow)
+<span class="comment">// Haversine-approximated distance</span>
+| <span class="keyword">extend</span> DistKm = 6371.0 * 2 * <span class="func">atan2</span>(...)
+| <span class="keyword">where</span> DistKm > DistanceThresholdKm
+| <span class="keyword">project</span> UserPrincipalName, FirstLocation, FirstIP, FirstTime,
+    SecondLocation, SecondIP, SecondTime, TimeBetweenMin, DistanceKm</code></pre>
+</details>
+
+<h4><span class="uc uc2">UC2</span> Tuned: Disabled User with Risk Tiers</h4>
+<p>WHY: Built-in fires on any disabled sign-in. This adds risk tiering so SOC knows what to prioritize.</p>
+<details><summary><strong>📝 View KQL: Disabled User (Tuned)</strong></summary>
+<pre><code>SigninLogs
+| <span class="keyword">where</span> TimeGenerated > <span class="func">ago</span>(1d)
+| <span class="keyword">where</span> ResultType == 50057  <span class="comment">// "The user account is disabled"</span>
+| <span class="keyword">summarize</span>
+    Attempts = <span class="func">count</span>(),
+    UniqueIPs = <span class="func">dcount</span>(IPAddress),
+    UniqueApps = <span class="func">dcount</span>(AppDisplayName),
+    IPs = <span class="func">make_set</span>(IPAddress, 10),
+    Apps = <span class="func">make_set</span>(AppDisplayName, 10)
+    <span class="keyword">by</span> UserPrincipalName, UserDisplayName
+| <span class="keyword">extend</span> RiskTier = <span class="func">case</span>(
+    Attempts >= 10 <span class="keyword">or</span> UniqueIPs >= 3, <span class="string">"🔴 High — credential spray"</span>,
+    Attempts >= 5, <span class="string">"🟠 Medium — persistent probing"</span>,
+    <span class="string">"🟡 Low — stale automation"</span>
+  )
+| <span class="keyword">sort by</span> Attempts <span class="keyword">desc</span></code></pre>
+</details>
+
+<div class="callout message"><strong>💡 Tip:</strong> Start with Content Hub — built-in rules activate in minutes. Then tune: adjust thresholds, add VPN exclusions, add geo-distance. Entity mapping auto-populates the investigation graph.</div>
+
+<!-- ─── AUTOMATION RULES ───────────────────── -->
+<h2 style="margin-top:32px">⚡ Automation Rules: Instant Triage</h2>
+
+<p>Automation rules are no-code if/then rules that auto-triage incidents and alerts the moment they're created. Set severity, assign owners, add tasks, suppress noise, and trigger playbooks — all from the portal UI.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/automate-incident-handling-with-automation-rules" target="_blank">Learn more: Automate incident handling with automation rules</a></p>
+
+<h3>Three Trigger Types</h3>
+<table>
+  <tr><th>Trigger</th><th>When to Use</th><th>Example</th></tr>
+  <tr><td><strong>Incident created/updated</strong></td><td>Triage after incidents are grouped</td><td>Set severity, assign owner, add tasks</td></tr>
+  <tr><td><strong>Alert created</strong></td><td>Act immediately on each alert <em>before</em> incident grouping</td><td>Run enrichment playbook on every alert</td></tr>
+  <tr><td><strong>Enhanced Alert Trigger</strong></td><td>Tenant-level, cross-workspace, for AI playbooks</td><td>Run AI-generated playbook across all workspaces</td></tr>
+</table>
+
+<h3>Using our use cases as examples:</h3>
+<table>
+  <tr><th>Action</th><th><span class="uc uc1">UC1</span> Impossible Travel</th><th><span class="uc uc2">UC2</span> Disabled User</th></tr>
+  <tr><td><strong>Trigger type</strong></td><td>Incident trigger OR Alert trigger</td><td>Alert trigger (act before incident groups)</td></tr>
+  <tr><td>Set severity</td><td>→ High</td><td>→ Medium</td></tr>
+  <tr><td>Set status</td><td>N/A</td><td>Auto-close if known service account</td></tr>
+  <tr><td>Assign owner</td><td>→ SOC Tier 2</td><td>→ Identity team</td></tr>
+  <tr><td>Add tags</td><td>"ImpossibleTravel", "CredentialTheft"</td><td>"DeprovisioningGap"</td></tr>
+  <tr><td>Add tasks</td><td>☑ Verify location ☑ Check MFA</td><td>☑ Confirm disabled ☑ Check sessions</td></tr>
+  <tr><td>Run playbook</td><td>→ Isolate-CompromisedUser</td><td>→ Block-DisabledUser</td></tr>
+  <tr><td>Suppress</td><td>Auto-close if IP in VPN allowlist</td><td>Auto-close if &lt;2 attempts</td></tr>
+  <tr><td>Expiration</td><td>Active only during pen test</td><td>N/A</td></tr>
+</table>
+
+<div class="callout message"><strong>💡 Key concept:</strong> Automation rules handle <strong>triage + orchestration</strong> — they decide what happens and which playbook to call.</div>
+
+<h3>Playbooks: Automated Response</h3>
+
+<p>Playbooks are Logic Apps workflows triggered by automation rules. They take action: isolate devices, revoke sessions, notify Teams, create tickets. Content Hub includes ready-made playbooks — start there, then customize or build your own.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/automate-responses-with-playbooks" target="_blank">Learn more: Automate responses with playbooks</a></p>
+
+<h4>Using our use cases as examples:</h4>
+<table>
+  <tr><th>Category</th><th><span class="uc uc1">UC1</span></th><th><span class="uc uc2">UC2</span></th></tr>
+  <tr><td>Identity</td><td>Revoke sessions, force MFA</td><td>Confirm disabled, revoke tokens</td></tr>
+  <tr><td>Endpoint</td><td>Isolate device (MDE)</td><td>N/A</td></tr>
+  <tr><td>Network</td><td>N/A</td><td>Block source IP</td></tr>
+  <tr><td>Enrichment</td><td>GeoIP, VirusTotal</td><td>HR termination date, audit logs</td></tr>
+  <tr><td>Notification</td><td>Teams → SOC</td><td>Email → HR + Security</td></tr>
+  <tr><td>Ticketing</td><td>ServiceNow</td><td>Jira</td></tr>
+  <tr><td>Incident</td><td>Add comment with actions</td><td>Close if confirmed disabled</td></tr>
+</table>
+
+<div class="callout message"><strong>💡 Key concept:</strong> Playbooks handle <strong>action + integration</strong> — they call APIs, block threats, and notify humans.</div>
+
+<h3>AI-Generated vs Traditional Playbooks</h3>
+<table>
+  <tr><th>Feature</th><th>Traditional (Logic Apps)</th><th>AI-Generated</th></tr>
+  <tr><td>Authoring</td><td>Visual designer + connectors</td><td>Natural language chat with Cline</td></tr>
+  <tr><td>Language</td><td>JSON workflow</td><td>Python</td></tr>
+  <tr><td>Where</td><td>Azure Portal / VS Code</td><td>Embedded VS Code in Defender</td></tr>
+  <tr><td>3rd party</td><td>400+ connectors</td><td>Integration Profiles</td></tr>
+  <tr><td>Testing</td><td>Manual</td><td>AI tests with real alert ID</td></tr>
+  <tr><td>Docs</td><td>Manual</td><td>Auto-generated flow diagrams</td></tr>
+  <tr><td>Cost</td><td>Logic Apps consumption</td><td>Security Copilot (free in preview)</td></tr>
+</table>
+
+<blockquote><strong>Summary:</strong> Automation rules are your SOC manager. Playbooks are your SOC analyst. AI playbooks let you build new automated workflows by describing what they should do.</blockquote>
+
+<!-- ─── VIBE-CODED PLAYBOOKS ───────────────── -->
+<h2 style="margin-top:32px">🤖 Vibe-Coded Playbooks (AI-Generated)</h2>
+
+<p>Describe your automation in natural language → Cline AI agent generates Python playbooks with documentation and flow diagrams → test with a real alert → deploy. No coding experience required.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/defender-xdr/security-copilot-sentinel-create-playbooks" target="_blank">Learn more: Create playbooks with Security Copilot</a></p>
+
+<h3>Using our use cases as examples:</h3>
+
+<h4><span class="uc uc1">UC1</span> Isolate-CompromisedUser</h4>
+<details><summary><strong>📋 Click to view prompt (paste into Cline in Plan Mode)</strong></summary>
+<pre><code>Create a playbook that triggers on impossible travel sign-in alerts.
+The playbook should:
+
+1. Extract the user UPN and both source IP addresses from the
+   alert entities.
+2. Call Microsoft Graph API to revoke all active sessions for
+   the user (POST /users/{id}/revokeSignInSessions).
+3. Call Microsoft Graph API to force MFA re-registration by
+   deleting the user's authentication methods and requiring
+   re-setup on next login.
+4. Post a message to our SOC Microsoft Teams channel with:
+   - User display name and UPN
+   - Both IP addresses and their geolocations
+   - The alert severity and link to the incident
+   - A note that sessions were revoked and MFA reset
+5. Add a comment to the Sentinel incident summarizing all
+   actions taken with timestamps.
+
+Use the Graph Integration profile for Microsoft Graph API calls.</code></pre>
+</details>
+
+<h3><span class="uc uc2">UC2</span> Block-DisabledUser</h3>
+<details><summary><strong>📋 Click to view prompt (paste into Cline in Plan Mode)</strong></summary>
+<pre><code>Create a playbook that triggers on alerts for sign-in attempts
+to disabled accounts. The playbook should:
+
+1. Extract the user UPN and source IP from alert entities.
+2. Call Microsoft Graph API to confirm the account is disabled
+   (GET /users/{upn}?$select=accountEnabled).
+3. If the account IS disabled (confirmed):
+   a. Revoke any remaining active sessions via Graph API.
+   b. Post a notification to our Security team in Teams with:
+      - User display name and UPN
+      - Source IP and geolocation
+      - Number of sign-in attempts
+      - Recommendation: "Verify deprovisioning checklist"
+   c. Add incident comment confirming disabled + revoked.
+4. If the account is NOT disabled (unexpected):
+   a. Escalate: set incident severity to High.
+   b. Post urgent Teams message: "ALERT: Account {UPN} was
+      expected disabled but is still active."
+   c. Add incident comment flagging the discrepancy.
+
+Use the Graph Integration profile for Microsoft Graph API calls.</code></pre>
+</details>
+
+<h3>After Generation: Deploy</h3>
+<ol>
+  <li><strong>Review</strong> code and flow diagram</li>
+  <li><strong>Test</strong> with a real alert ID</li>
+  <li><strong>Save</strong> (created in disabled state)</li>
+  <li><strong>Enable:</strong> Automation → Active Playbooks → toggle</li>
+  <li><strong>Create Enhanced Alert Trigger:</strong> Automation Rules → Create → set conditions → Run playbook</li>
+</ol>
+
+<div class="callout tip">
+<strong>💡 Key points:</strong> No coding experience required. Security Copilot must be enabled (SCUs not billed during preview). AI handles conditional logic, generates documentation and flow diagrams automatically.
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: SENTINEL PLATFORM                     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="graphs">
+
+<h2>Sentinel Platform: Data Lake, Investigation and AI</h2>
+
+<div class="pipeline">
+              ┌──────────────────────────────────────────────┐
+              │              <span class="node">Sentinel Data Lake</span>               │
+              │  <span class="desc">Unified storage for all security data</span>          │
+              │  <span class="desc">Cold storage, up to 12 years</span>                   │
+              └──┬──────────────┬──────────────┬─────────┬───┘
+                 │              │              │         │
+                 ▼              ▼              ▼         ▼
+  ┌────────────────┐ ┌────────────────┐ ┌──────────┐ ┌──────────────────┐
+  │ <span class="node">KQL Jobs</span>        │ │ <span class="node">Search Jobs</span>    │ │<span class="node">Notebooks</span> │ │ <span class="node">Custom Graphs</span>    │
+  │ <span class="desc">Scheduled KQL</span>   │ │ <span class="desc">Forensic</span>       │ │<span class="desc">PySpark,</span>  │ │ <span class="desc">Entity mapping</span>   │
+  │ <span class="desc">Baselines, TI,</span>  │ │ <span class="desc">retrieval,</span>     │ │<span class="desc">Python ML</span> │ │ <span class="desc">GQL traversal</span>    │
+  │ <span class="desc">enrichment</span>      │ │ <span class="desc">12yr lookback</span>  │ │          │ │ <span class="desc">Relationship viz</span> │
+  └────────────────┘ └────────────────┘ └──────────┘ └──────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                    <span class="node">MCP Server (AI Layer)</span>                           │
+  │  <span class="desc">Optional. Natural language interface to the data lake + Defender</span>   │
+  │  <span class="desc">Collections: Data Exploration · Triage · Custom Tools</span>              │
+  │  <span class="desc">Works alongside the tools above — not a dependency</span>                │
+  └─────────────────────────────────────────────────────────────────────┘
+</div>
+
+<h2>MCP, Graphs and Data Lake Jobs: When to Use What</h2>
+
+<table>
+  <tr>
+    <th></th>
+    <th>MCP Server</th>
+    <th>Custom Graphs</th>
+    <th>KQL Jobs</th>
+    <th>Search Jobs</th>
+  </tr>
+  <tr>
+    <td><strong>What it is</strong></td>
+    <td>AI interface layer. Lets AI agents (Copilot, CLI, VS Code) interact with Sentinel data using natural language</td>
+    <td>Security knowledge graphs built from Sentinel data. Models entities (users, IPs, devices) and their relationships, query with GQL</td>
+    <td>One-time or scheduled KQL queries on the data lake. Writes results to analytics or data lake tier tables</td>
+    <td>One-time bulk data retrieval from a single table. Hydrates large volumes into analytics tier for investigation</td>
+  </tr>
+  <tr>
+    <td><strong>Purpose</strong></td>
+    <td>Natural language investigation. Query data, analyze entities, triage incidents without writing KQL</td>
+    <td>Visualize relationships and attack paths. Traverses connections that flat queries can't show</td>
+    <td>Operationalize KQL. Schedule baselines, TI matching, enrichment, cross-table joins</td>
+    <td>Forensic deep dives. Retrieve historical data from archive tier or bulk promote from one table</td>
+  </tr>
+  <tr>
+    <td><strong>Example</strong></td>
+    <td><span class="uc uc1">UC1</span> "Analyze user jane@contoso.com. What's her risk score, related alerts, and blast radius?" → AI runs KQL + reasoning, returns structured analysis<br><br><span class="uc uc2">UC2</span> "Summarize all disabled user sign-in incidents this week" → AI triages and prioritizes for you</td>
+    <td><span class="uc uc1">UC1</span> Build graph: User → IP → Device → Alert. Click Jane's node, see she signed in from 2 continents, triggered 3 alerts, used 2 devices. Full visual map<br><br><span class="uc uc2">UC2</span> Query: "Show everything the disabled account touched" → visualize all apps, IPs, peers in one graph</td>
+    <td><span class="uc uc1">UC1</span> Daily scheduled job: build sign-in location baseline per user (template: "Anomalous sign-in locations increase"). Results land in a queryable table.<br><br><span class="uc uc2">UC2</span> Daily job: generate disabled user activity report. Attempts, IPs, apps, auto-written to <code>_KQL_CL</code> table</td>
+    <td><span class="uc uc2">UC2</span> "Pull all sign-in attempts for terminated.user@contoso.com from the past 12 months". Archive data hydrated into analytics tier for forensic review</td>
+  </tr>
+  <tr>
+    <td><strong>Interface</strong></td>
+    <td>Any MCP client, including VS Code, Copilot CLI, AI agents</td>
+    <td>VS Code notebooks (PySpark) + Defender portal graph experience</td>
+    <td>Defender portal KQL editor or Jobs page</td>
+    <td>Defender portal Logs page</td>
+  </tr>
+  <tr>
+    <td><strong>Query language</strong></td>
+    <td>Natural language → KQL (auto-generated)</td>
+    <td>GQL (Graph Query Language) for traversal</td>
+    <td>Full KQL with joins/unions</td>
+    <td>Limited KQL (single table, no joins)</td>
+  </tr>
+  <tr>
+    <td><strong>Scheduling</strong></td>
+    <td>On-demand (interactive)</td>
+    <td>On-demand or scheduled (daily, weekly, etc.)</td>
+    <td>On-demand, daily, weekly, monthly</td>
+    <td>On-demand only</td>
+  </tr>
+  <tr>
+    <td><strong>Lookback</strong></td>
+    <td>Depends on data lake retention</td>
+    <td>Notebook-defined</td>
+    <td>Up to 12 years</td>
+    <td>Up to 12 years</td>
+  </tr>
+  <tr>
+    <td><strong>Templates</strong></td>
+    <td>N/A</td>
+    <td>Vibe-code with <code>@sentinel /graph-authoring</code></td>
+    <td>✅ 15+ built-in templates</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td><strong>Cost</strong></td>
+    <td><span class="price-free">Free</span> (pay for underlying KQL + SCUs for entity analyzer)</td>
+    <td><span class="price-paid">Per vCore hour</span> (49 build / 6 query)</td>
+    <td><span class="price-paid">Per GB of data analyzed</span></td>
+    <td><span class="price-paid">Per GB of data analyzed</span></td>
+  </tr>
+</table>
+
+<div class="callout tip"><strong>💡 How they complement each other:</strong> KQL Jobs build baselines and enrich data → Custom Graphs map relationships across that data → MCP lets you investigate it all with natural language. Search Jobs fill the gap when you need to reach archived historical data.</div>
+
+<!-- ─── MCP HOW TO ─────────────────────────── -->
+<h2 style="margin-top:32px">🤖 MCP: Natural Language Security Operations</h2>
+
+<p>MCP (Model Context Protocol) connects AI agents in VS Code, Copilot, or other clients to your Sentinel data. Instead of writing KQL, you describe what you need in natural language and the AI handles the rest. Sentinel provides <strong>3 tool collections</strong>, each focused on a different SOC scenario:</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/datalake/sentinel-mcp-tools-overview" target="_blank">Learn more: Tool collections in Microsoft Sentinel MCP server</a></p>
+
+<h3>Available Collections</h3>
+<table>
+  <tr><th>Collection</th><th>What It Does</th><th>Server URL</th><th>Key Tools</th></tr>
+  <tr>
+    <td><strong>Data Exploration</strong></td>
+    <td>Search tables, query the data lake, analyze entities (users, URLs, IPs)</td>
+    <td><code>https://sentinel.microsoft.com/mcp/data-exploration</code></td>
+    <td><code>search_tables</code>, <code>query_lake</code>, <code>analyze_user_entity</code>, <code>analyze_url_entity</code></td>
+  </tr>
+  <tr>
+    <td><strong>Triage</strong></td>
+    <td>Prioritize incidents, fetch alerts and evidence, run hunting queries, investigate devices and users</td>
+    <td><code>https://sentinel.microsoft.com/mcp/triage</code></td>
+    <td><code>ListIncidents</code>, <code>GetAlertByID</code>, <code>RunAdvancedHuntingQuery</code>, <code>GetDefenderMachine</code>, <code>ListDefenderIndicators</code></td>
+  </tr>
+  <tr>
+    <td><strong>Custom Tools</strong></td>
+    <td>Save your own KQL queries as MCP tools for deterministic, repeatable agent workflows</td>
+    <td>You define your own</td>
+    <td>Your saved KQL queries, grouped into custom collections</td>
+  </tr>
+</table>
+
+<div class="callout tip"><strong>💡 You can add multiple collections.</strong> Add Data Exploration for investigation, Triage for incident response, and your own custom tools — all available in the same VS Code chat session.</div>
+
+<h3>Setup in VS Code</h3>
+<table>
+  <tr><th>Step</th><th>Action</th><th>Details</th></tr>
+  <tr>
+    <td><strong>1. Add MCP Server</strong></td>
+    <td>Press <code>Ctrl+Shift+P</code> → type <code>MCP: Add Server</code></td>
+    <td>Choose <strong>HTTP (HTTP or Server-Sent Events)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>2. Enter URL</strong></td>
+    <td>Paste the collection URL from the table above</td>
+    <td>e.g. <code>https://sentinel.microsoft.com/mcp/data-exploration</code></td>
+  </tr>
+  <tr>
+    <td><strong>3. Name it</strong></td>
+    <td>Give a friendly Server ID</td>
+    <td>e.g. <code>Sentinel MCP</code></td>
+  </tr>
+  <tr>
+    <td><strong>4. Authenticate</strong></td>
+    <td>Click <strong>Allow</strong> when prompted</td>
+    <td>Sign in with your account (needs Security Reader role minimum)</td>
+  </tr>
+  <tr>
+    <td><strong>5. Open Chat</strong></td>
+    <td><code>Ctrl+Alt+I</code> or View → Chat</td>
+    <td>Switch to <strong>Agent mode</strong> (dropdown at top of chat)</td>
+  </tr>
+  <tr>
+    <td><strong>6. Verify</strong></td>
+    <td>Click the 🔧 tools icon in chat</td>
+    <td>You should see Sentinel tools listed: <code>search_tables</code>, <code>query_lake</code>, <code>list_sentinel_workspaces</code>, etc.</td>
+  </tr>
+  <tr>
+    <td><strong>7. Investigate!</strong></td>
+    <td>Type natural language prompts in chat</td>
+    <td>The AI auto-discovers tables, writes KQL, runs queries, and returns results</td>
+  </tr>
+</table>
+
+<h3>Key Tools Across Collections</h3>
+<table>
+  <tr><th>Collection</th><th>Tool</th><th>What it does</th><th>Example prompt</th></tr>
+  <tr>
+    <td rowspan="3"><strong>Data Exploration</strong></td>
+    <td><code>search_tables</code></td>
+    <td>Discovers relevant tables by keyword</td>
+    <td>"What tables have sign-in data?"</td>
+  </tr>
+  <tr>
+    <td><code>query_lake</code></td>
+    <td>Runs KQL on the Sentinel data lake</td>
+    <td>"Show me failed sign-ins from the last 24 hours"</td>
+  </tr>
+  <tr>
+    <td><code>analyze_user_entity</code></td>
+    <td>AI risk analysis of a user: auth patterns, anomalies, blast radius</td>
+    <td>"Is jane@contoso.com compromised?"</td>
+  </tr>
+  <tr>
+    <td rowspan="4"><strong>Triage</strong></td>
+    <td><code>ListIncidents</code></td>
+    <td>List and filter incidents by severity, status, analyst</td>
+    <td>"List the last 5 high-severity incidents"</td>
+  </tr>
+  <tr>
+    <td><code>GetAlertByID</code></td>
+    <td>Get full alert details including evidence entities</td>
+    <td>"Get the alerts for incident 12345 and analyze the evidence"</td>
+  </tr>
+  <tr>
+    <td><code>RunAdvancedHuntingQuery</code></td>
+    <td>Run KQL hunting queries across Defender tables</td>
+    <td>"Which users interacted with this suspicious IP?"</td>
+  </tr>
+  <tr>
+    <td><code>ListDefenderIndicators</code></td>
+    <td>List tenant IOCs (file hashes, domains, IPs) and their actions</td>
+    <td>"Show me all blocked indicators added this week"</td>
+  </tr>
+</table>
+
+<h3>Sample Prompts</h3>
+<div class="callout message"><strong>Try these in VS Code Agent mode chat:</strong></div>
+
+<h4>Data Exploration:</h4>
+<ul>
+  <li><span class="uc uc1">UC1</span> <em>"Find users with sign-ins from multiple countries in the last 24 hours and explain why they're risky"</em></li>
+  <li><span class="uc uc1">UC1</span> <em>"Investigate user jane@contoso.com. Is she compromised? Check her sign-in locations and related alerts"</em></li>
+  <li><span class="uc uc2">UC2</span> <em>"Show me all disabled account sign-in attempts this week, grouped by user with IP and app details"</em></li>
+</ul>
+
+<h4>Triage:</h4>
+<ul>
+  <li><em>"List the last 5 incidents and assess which is most urgent to triage"</em></li>
+  <li><span class="uc uc1">UC1</span> <em>"Get the alerts for the impossible travel incident and analyze the evidence for maliciousness"</em></li>
+  <li><span class="uc uc2">UC2</span> <em>"Run a hunting query to check which apps the disabled user accessed in the last 7 days"</em></li>
+  <li><em>"Find the top 3 users at risk and explain why they're at risk"</em></li>
+</ul>
+
+<h3>How it Works Behind the Scenes</h3>
+<ol>
+  <li><strong>You type</strong> a natural language question in chat</li>
+  <li><strong>AI calls <code>search_tables</code></strong>: finds relevant tables (SigninLogs, BehaviorAnalytics, etc.)</li>
+  <li><strong>AI writes KQL</strong>: generates a query based on the table schemas</li>
+  <li><strong>AI calls <code>query_lake</code></strong>: executes the KQL against your data lake</li>
+  <li><strong>If it fails</strong>: AI self-corrects the KQL and retries</li>
+  <li><strong>AI responds</strong>: summarizes findings in plain language with the data</li>
+</ol>
+<div class="callout tip"><strong>💡 Key point:</strong> You don't need to know KQL. The AI writes it, runs it, fixes errors, and explains results. But if you DO know KQL, you can ask it to show the query it generated so you can learn and refine.</div>
+
+<!-- ─── BUILT-IN GRAPHS ────────────────────── -->
+<h2 style="margin-top:32px">📊 Built-In Graphs (Free, Auto-Provisioned)</h2>
+<p>These graphs come out of the box. No notebooks, no code, no setup. If you have the Sentinel data lake, they're already there.</p>
+
+<table>
+  <tr><th>Portal</th><th>Graph</th><th>Where to Find It</th><th>What It Shows</th></tr>
+  <tr>
+    <td><strong>Defender</strong></td>
+    <td><strong>Incident Graph + Blast Radius</strong></td>
+    <td>Defender Portal → Incidents → open any incident → <strong>Graph</strong> tab</td>
+    <td>Visual map of the incident's current impact AND possible future impact. Compromised entity → what else could the attacker reach. <span class="uc uc1">UC1</span> See Jane's compromised account, the IPs, devices, and apps at risk</td>
+  </tr>
+  <tr>
+    <td><strong>Defender</strong></td>
+    <td><strong>Hunting Graph</strong></td>
+    <td>Defender Portal → Hunting → select an entity → <strong>Explore in graph</strong></td>
+    <td>Interactive graph traversal with <strong>predefined scenarios classified by MITRE ATT&CK</strong> (see table below). Click any entity, see all connected relationships. <span class="uc uc2">UC2</span> Click the disabled user, see every app and IP they touched</td>
+  </tr>
+</table>
+
+<h3>Hunting Graph: Predefined Scenarios (MITRE ATT&CK Classified)</h3>
+<p>In the Defender portal, select <strong>Search with Predefined scenarios</strong> to use these prebuilt graph queries:</p>
+
+<table>
+  <tr><th>Scenario</th><th>What It Does</th><th>MITRE Technique</th><th>UC</th></tr>
+  <tr>
+    <td><strong>Attack paths to critical asset</strong></td>
+    <td>View potential lateral movement routes through various nodes leading to a target critical asset</td>
+    <td>Lateral Movement, Exploratory</td>
+    <td><span class="uc uc1">UC1</span></td>
+  </tr>
+  <tr>
+    <td><strong>Entity relationship map</strong></td>
+    <td>Find all direct connections (incoming + outgoing) of any entity. Use any entity as the seeding node</td>
+    <td>Exploratory</td>
+    <td><span class="uc uc1">UC1</span> <span class="uc uc2">UC2</span></td>
+  </tr>
+  <tr>
+    <td><strong>Paths between two entities</strong></td>
+    <td>Discover if a path exists between two entities. Shows all routes connecting them</td>
+    <td>Lateral Movement, Exploratory</td>
+    <td><span class="uc uc1">UC1</span></td>
+  </tr>
+  <tr>
+    <td><strong>Access to key vaults</strong></td>
+    <td>View paths from devices, VMs, containers, servers that have direct or indirect access to a specific key vault</td>
+    <td>Lateral Movement, Collection</td>
+    <td><span class="uc uc1">UC1</span></td>
+  </tr>
+  <tr>
+    <td><strong>Users with access to sensitive data</strong></td>
+    <td>View all users who can access a specific sensitive data storage, especially during unusual access incidents</td>
+    <td>Lateral Movement, Exploratory, Collection</td>
+    <td><span class="uc uc2">UC2</span></td>
+  </tr>
+  <tr>
+    <td><strong>Critical identities with storage access</strong></td>
+    <td>Identify critical/privileged users with access to storage containing sensitive data</td>
+    <td>Lateral Movement, Collection</td>
+    <td><span class="uc uc1">UC1</span> <span class="uc uc2">UC2</span></td>
+  </tr>
+  <tr>
+    <td><strong>Potential data exfiltration by device</strong></td>
+    <td>View paths from a device to storage accounts it can access, useful for BYOD investigations</td>
+    <td>Exploratory, Collection</td>
+    <td><span class="uc uc1">UC1</span></td>
+  </tr>
+  <tr>
+    <td><strong>Attack paths to critical Kubernetes clusters</strong></td>
+    <td>View users, VMs, and containers that have access to a high-criticality K8s cluster</td>
+    <td>Privilege Escalation, Lateral Movement</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td><strong>Access to Azure DevOps repositories</strong></td>
+    <td>View users with read/write access to a specific ADO repository. Identify entities with access to repos containing sensitive assets</td>
+    <td>Collection</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td><strong>Choke points to SQL data stores</strong></td>
+    <td>Identify nodes that appear in the highest number of paths leading to SQL data stores. Discover users with roles or permissions to access them</td>
+    <td>Lateral Movement, Collection</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<p>Filter scenarios by MITRE technique using the buttons in the portal: <strong>Lateral Movement</strong>, <strong>Collection</strong>, <strong>Exploratory</strong>, <strong>Privilege Escalation</strong>.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-graph" target="_blank">Learn more: Hunt for threats using the hunting graph</a></p>
+
+<div class="callout message"><strong>💡 Key concept:</strong> The hunting graph comes with predefined scenarios mapped to MITRE ATT&CK: lateral movement, collection, exploratory. Select a scenario, provide an entity, and instantly see attack paths and relationships. No queries needed. Custom graphs are for when you need scenarios beyond these built-in ones.</div>
+
+<h3>Built-In vs Custom Graphs</h3>
+<table>
+  <tr><th></th><th>Built-In Graphs (Defender)</th><th>Custom Graphs (Notebooks)</th></tr>
+  <tr><td><strong>Setup</strong></td><td>None. Auto-provisioned with data lake</td><td>Build in VS Code with PySpark or vibe-code with <code>@sentinel /graph-authoring</code></td></tr>
+  <tr><td><strong>Data</strong></td><td>Microsoft's pre-built entity model (users, devices, IPs, alerts)</td><td>Any table in data lake + non-Microsoft sources</td></tr>
+  <tr><td><strong>Customizable?</strong></td><td>No. Fixed entity types and relationships</td><td>Fully custom nodes, edges, properties, and queries</td></tr>
+  <tr><td><strong>Query language</strong></td><td>Click-to-traverse (visual)</td><td>GQL (Graph Query Language)</td></tr>
+  <tr><td><strong>Scheduling</strong></td><td>Always up to date</td><td>On-demand or scheduled graph jobs</td></tr>
+  <tr><td><strong>Sharing</strong></td><td>Available to all Defender users</td><td>Materialize via graph job → team access in Defender</td></tr>
+  <tr><td><strong>Cost</strong></td><td><span class="price-free">Free</span></td><td><span class="price-paid">Per vCore hour</span> (49 build / 6 query)</td></tr>
+  <tr><td><strong>Best for</strong></td><td>Day-to-day incident investigation, hunting, blast radius</td><td>Custom attack path models, cross-source analysis, advanced graph algorithms</td></tr>
+</table>
+
+<!-- ─── GRAPH QUERIES ──────────────────────── -->
+<h2 style="margin-top:32px">🕸️ Custom Graphs: Map Relationships and Attack Paths</h2>
+
+<p>When the built-in graphs above don't cover your scenario, build custom security knowledge graphs from any Sentinel data. Model entities (users, IPs, devices) and their relationships, then query with GQL. Build in VS Code Sentinel notebooks (PySpark) or vibe-code with <code>@sentinel /graph-authoring</code>.</p>
+
+<p>📖 <a href="https://learn.microsoft.com/en-us/azure/sentinel/graph-overview" target="_blank">Learn more: Security graphs in Microsoft Sentinel</a></p>
+
+<h3>Using our use cases as examples:</h3>
+
+<h4><span class="uc uc1">UC1</span> Impossible Travel</h4>
+
+<details><summary><strong>📝 Query 1: Users with multiple distant locations</strong></summary>
+<pre><code>MATCH (u:User)-[s:SignedInFrom]->(ip:IPAddress)
+WHERE u.uniqueIPCount > 3
+RETURN u.id AS User, u.maxRiskLevel AS Risk,
+       collect(DISTINCT ip.id) AS IPs,
+       collect(DISTINCT ip.location) AS Locations
+ORDER BY u.uniqueIPCount DESC
+LIMIT 20</code></pre>
+</details>
+
+<details><summary><strong>📝 Query 2: Specific user's sign-in footprint</strong></summary>
+<pre><code>MATCH p=(u:User)-[s:SignedInFrom]->(ip:IPAddress)
+WHERE u.id = 'user@contoso.com'
+RETURN *</code></pre>
+</details>
+
+<details><summary><strong>📝 Query 3: Shared IPs (lateral movement)</strong></summary>
+<pre><code>MATCH (u1:User)-[:SignedInFrom]->(ip:IPAddress)
+      &lt;-[:SignedInFrom]-(u2:User)
+WHERE u1.id &lt; u2.id AND ip.distinctUserCount >= 2
+RETURN ip.id AS SharedIP, ip.location AS Location,
+       collect(DISTINCT u1.id) AS Users1,
+       collect(DISTINCT u2.id) AS Users2
+ORDER BY ip.distinctUserCount DESC LIMIT 20</code></pre>
+</details>
+
+<details><summary><strong>📝 Query 4: Attack chain: User → IP + Alert</strong></summary>
+<pre><code>MATCH (u:User)-[:SignedInFrom]->(ip:IPAddress),
+      (u)-[:TriggeredAlert]->(a:Alert)
+WHERE a.AlertSeverity IN ['High', 'Medium']
+RETURN u.id AS User, ip.id AS IP,
+       a.displayName AS Alert, a.Tactics AS Tactics
+ORDER BY a.AlertSeverity DESC LIMIT 30</code></pre>
+</details>
+
+<h3><span class="uc uc2">UC2</span> Disabled User</h3>
+
+<details><summary><strong>📝 Query 5: Disabled users with activity</strong></summary>
+<pre><code>MATCH (u:User)-[s:SignedInFrom]->(ip:IPAddress)
+WHERE u.maxRiskLevel IS NOT NULL
+RETURN u.id AS DisabledUser, u.signInCount AS Attempts,
+       collect(DISTINCT ip.id) AS SourceIPs
+ORDER BY u.signInCount DESC LIMIT 20</code></pre>
+</details>
+
+<details><summary><strong>📝 Query 6: What apps did they target?</strong></summary>
+<pre><code>MATCH (u:User)-[:AccessedApp]->(app:Application)
+WHERE u.id = 'terminated.user@contoso.com'
+RETURN u.id AS User,
+       collect(DISTINCT app.displayName) AS TargetApps</code></pre>
+</details>
+
+<details><summary><strong>📝 Query 7: Full blast radius</strong></summary>
+<pre><code>MATCH p=(u:User)-[r]->(target)
+WHERE u.id = 'terminated.user@contoso.com'
+RETURN *</code></pre>
+<p style="padding:0 16px 12px; color:var(--green); font-size:0.85rem">💡 This one query visualizes everything the disabled account touched. IPs, apps, devices, alerts.</p>
+</details>
+
+<details><summary><strong>📝 Query 8: Peer deviation</strong></summary>
+<pre><code>MATCH (u:User)-[:PeerOf]->(peer:User),
+      (u)-[:AccessedApp]->(app:Application)
+WHERE NOT EXISTS {
+    MATCH (peer)-[:AccessedApp]->(app)
+}
+AND u.id = 'terminated.user@contoso.com'
+RETURN u.id AS DisabledUser, peer.id AS Peer,
+       app.displayName AS UniqueApp LIMIT 20</code></pre>
+</details>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: JOBS & SCHEDULING                     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="jobs">
+
+<h2>Jobs & Scheduling</h2>
+
+<h3>Job Types at a Glance</h3>
+<table>
+  <tr><th>Job Type</th><th>What</th><th>One-Time</th><th>Scheduled</th><th>Best For</th></tr>
+  <tr><td><strong>KQL Jobs</strong></td><td>Run KQL on data lake → write to table</td><td>✅</td><td>✅</td><td>Investigations, TI matching, enrichment</td></tr>
+  <tr><td><strong>Summary Rules</strong></td><td>Aggregate high-volume logs</td><td>N/A</td><td>✅ 20min-24hr</td><td>Compressing noisy logs, cost savings</td></tr>
+  <tr><td><strong>Search Jobs</strong></td><td>Hydrate from single table</td><td>✅</td><td>N/A</td><td>Forensics, archive data, bulk promotion</td></tr>
+  <tr><td><strong>Graph Jobs</strong></td><td>Build graphs from notebook</td><td>✅ On demand</td><td>✅</td><td>Relationship mapping, attack paths</td></tr>
+</table>
+
+<h3>Feature Comparison</h3>
+<table>
+  <tr><th>Feature</th><th>KQL Jobs</th><th>Summary Rules</th><th>Search Jobs</th><th>Graph Jobs</th></tr>
+  <tr><td>Multi-table joins</td><td>✅</td><td>Limited</td><td>❌</td><td>✅ PySpark</td></tr>
+  <tr><td>Lookback</td><td>12 years</td><td>1 day</td><td>12 years</td><td>Notebook-defined</td></tr>
+  <tr><td>Timeout</td><td>1 hour</td><td>10 min</td><td>24 hours</td><td>Session</td></tr>
+  <tr><td>Templates</td><td>✅ 15+</td><td>✅ Content Hub</td><td>❌</td><td>❌ (use @sentinel)</td></tr>
+  <tr><td>Pricing</td><td>GB analyzed</td><td>Free (Analytics)</td><td>GB analyzed</td><td>vCore hours</td></tr>
+</table>
+
+<h3>Built-In KQL Job Templates</h3>
+<table>
+  <tr><th>Template</th><th>Category</th><th>UC</th></tr>
+  <tr><td>Anomalous sign-in locations increase</td><td>Hunting</td><td><span class="uc uc1">UC1</span></td></tr>
+  <tr><td>Anomalous sign-in behavior based on location changes</td><td>Anomaly</td><td><span class="uc uc1">UC1</span></td></tr>
+  <tr><td>Daily sign-in location trend per user and app</td><td>Baseline</td><td><span class="uc uc1">UC1</span></td></tr>
+  <tr><td>Entra ID rare user agent per app</td><td>Anomaly</td><td><span class="uc uc2">UC2</span></td></tr>
+  <tr><td>Windows suspicious login outside normal hours</td><td>Anomaly</td><td><span class="uc uc2">UC2</span></td></tr>
+</table>
+
+<h3>KQL Job Examples</h3>
+
+<h4><span class="uc uc1">UC1</span> One-Time Investigation</h4>
+<pre><code><span class="comment">// Job: "Investigate-ImpossibleTravel-JaneDoe"</span>
+<span class="comment">// Schedule: One-time | Destination: _KQL_CL table</span>
+<span class="keyword">let</span> delay = 15m;
+<span class="keyword">let</span> user = <span class="string">"jane.doe@contoso.com"</span>;
+SigninLogs
+| <span class="keyword">where</span> TimeGenerated > <span class="func">ago</span>(30d)
+  <span class="keyword">and</span> TimeGenerated &lt; <span class="func">now</span>() - delay
+| <span class="keyword">where</span> UserPrincipalName == user
+| <span class="keyword">project</span> TimeGenerated, IPAddress, City, Country,
+          AppDisplayName, RiskLevelDuringSignIn
+| <span class="keyword">sort by</span> TimeGenerated <span class="keyword">asc</span></code></pre>
+
+<h4><span class="uc uc2">UC2</span> Scheduled Daily Report</h4>
+<pre><code><span class="comment">// Job: "Daily-DisabledUser-Activity"</span>
+<span class="comment">// Schedule: Daily 02:00 UTC | Destination: _KQL_CL table</span>
+<span class="keyword">let</span> delay = 15m;
+<span class="keyword">let</span> endTime = <span class="func">now</span>() - delay;
+<span class="keyword">let</span> startTime = endTime - 1d;
+SigninLogs
+| <span class="keyword">where</span> TimeGenerated <span class="keyword">between</span> (startTime .. endTime)
+| <span class="keyword">where</span> ResultType == 50057
+| <span class="keyword">summarize</span> Attempts=<span class="func">count</span>(),
+    UniqueIPs=<span class="func">dcount</span>(IPAddress)
+    <span class="keyword">by</span> UserPrincipalName</code></pre>
+
+<h3>Graph Jobs</h3>
+<table>
+  <tr><th>Schedule</th><th>Use Case</th></tr>
+  <tr><td><strong>On demand</strong></td><td>Testing, one-off investigation (30-day retention)</td></tr>
+  <tr><td><strong>Scheduled</strong></td><td>Production graph: Daily/Weekly. Team accesses in Defender portal.</td></tr>
+</table>
+<p>After materialization (status: <strong>Ready</strong>), accessible from Defender portal, VS Code, and Graph APIs.</p>
+
+<h3>Key Takeaways</h3>
+<ol>
+  <li><strong>Jobs operationalize your KQL</strong>: Schedule queries and results land automatically</li>
+  <li><strong>Templates get you started in minutes</strong>: 15+ built-in for sign-in anomalies, TI matching</li>
+  <li><strong>12 years of lookback</strong>: Critical for compliance and forensics</li>
+  <li><strong>Graph jobs enable team-wide access</strong>: Build once, refresh daily, and the entire SOC can query it</li>
+</ol>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: RESOURCES & PRICING                   -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="resources">
+
+<h2>Best Practices</h2>
+<table>
+  <tr><th>Topic</th><th>Documentation</th></tr>
+  <tr><td><strong>General Best Practices</strong></td><td><a href="https://learn.microsoft.com/en-us/azure/sentinel/best-practices" target="_blank">Best Practices for Microsoft Sentinel</a></td></tr>
+  <tr><td><strong>Data Collection</strong></td><td><a href="https://learn.microsoft.com/en-us/azure/sentinel/best-practices-data" target="_blank">Best Practices for Data Collection</a></td></tr>
+  <tr><td><strong>Operational Guide</strong></td><td><a href="https://learn.microsoft.com/en-us/azure/sentinel/ops-guide" target="_blank">Operational Guide: Microsoft Sentinel</a></td></tr>
+</table>
+
+<h2>Full Documentation & Training</h2>
+<table>
+  <tr><th>Resource</th><th>Link</th></tr>
+  <tr><td><strong>Sentinel Ninja Training</strong> (Level 400)</td><td><a href="https://techcommunity.microsoft.com/blog/microsoftsentinelblog/become-a-microsoft-sentinel-ninja-the-complete-level-400-training/1246310" target="_blank">Microsoft Sentinel Ninja Training</a></td></tr>
+  <tr><td><strong>Full Learn Documentation</strong></td><td><a href="https://learn.microsoft.com/en-us/azure/sentinel/" target="_blank">Microsoft Sentinel Documentation</a></td></tr>
+</table>
+<p style="color:var(--text-dim)">The resources are many. The full documentation above gives you a comprehensive view. For example: enabling UEBA, health monitoring, planning your workspace, etc.</p>
+
+<h2>Pricing</h2>
+<div class="callout warning">
+<strong>⚠️ Note:</strong> This is publicly available information. For specific pricing details, contact your Microsoft account team.
+</div>
+
+<h3>Pricing Calculators</h3>
+<table>
+  <tr><th>Calculator</th><th>Link</th></tr>
+  <tr><td><strong>Public Pricing Page</strong></td><td><a href="https://azure.microsoft.com/en-us/pricing/details/microsoft-sentinel/" target="_blank">Microsoft Sentinel Pricing</a></td></tr>
+  <tr><td><strong>Sentinel Cost Estimator</strong> (open within your tenant)</td><td><a href="https://techcommunity.microsoft.com/blog/microsoftsentinelblog/estimate-microsoft-sentinel-costs-with-confidence-using-the-new-sentinel-cost-est/4374659" target="_blank">Sentinel Cost Estimator Blog</a></td></tr>
+  <tr><td><strong>Microsoft 365 E5 Free Ingest Benefit</strong></td><td><a href="https://azure.microsoft.com/en-us/pricing/offers/sentinel-microsoft-365-offer/" target="_blank">M365 E5 Benefit with Sentinel</a></td></tr>
+  <tr><td><strong>Reduce Costs Guide</strong></td><td><a href="https://learn.microsoft.com/en-us/azure/sentinel/billing-reduce-costs" target="_blank">Reduce Costs for Microsoft Sentinel</a></td></tr>
+</table>
+
+<h3>Cost by Capability</h3>
+<table>
+  <tr><th>Capability</th><th>Cost</th></tr>
+  <tr><td>Content Hub / Automation Rules / Analytic Rules</td><td><span class="price-free">Free (included with Sentinel)</span></td></tr>
+  <tr><td>Summary Rules (Analytics tier)</td><td><span class="price-free">Free</span>; Basic/Aux = data scan cost</td></tr>
+  <tr><td>KQL Jobs / Search Jobs</td><td><span class="price-paid">Per GB of data analyzed</span></td></tr>
+  <tr><td>Playbooks (Logic Apps)</td><td><span class="price-paid">Logic Apps consumption pricing</span></td></tr>
+  <tr><td>AI Playbook Generator</td><td><span class="price-paid">Requires Security Copilot</span> (SCUs free during preview)</td></tr>
+  <tr><td>Custom Graphs</td><td><span class="price-paid">Per vCore hour</span> (49 build / 6 query)</td></tr>
+  <tr><td>MCP Server</td><td><span class="price-free">Free</span> (pay for underlying queries + SCUs for entity analyzer)</td></tr>
+  <tr><td>Embedded Defender/Purview Graphs</td><td><span class="price-free">Free</span></td></tr>
+  <tr><td>Data Lake Mirroring</td><td><span class="price-free">No extra cost</span></td></tr>
+</table>
+
+</div>
+
+</div><!-- /content -->
+
+<script>
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

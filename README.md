@@ -6,6 +6,7 @@ Personal learning work on Microsoft Sentinel. Everything here is built from publ
 
 | Folder | What it holds |
 |---|---|
+| [sentinel-starter-guide/](sentinel-starter-guide/) | A tabbed HTML platform guide: getting started, use cases, rules and automation, the wider Sentinel platform, and pricing. Built from public Microsoft documentation. **[View it live.](https://carolinemutua.github.io/sentinel/sentinel-starter-guide/)** |
 | [codeless-connector/](codeless-connector/) | A self-contained ARM template that stands up a Microsoft Sentinel codeless connector against the public FeodoTracker (abuse.ch) threat feed, plus a detection rule and a workbook. |
 | [sentinel-study-guide/](sentinel-study-guide/) | A single-file HTML study guide: a searchable question-and-answer reference for Sentinel concepts, with mind maps and links to Microsoft Learn. **[View it live.](https://carolinemutua.github.io/sentinel/sentinel-study-guide/sentinel-study-guide.html)** |
 
