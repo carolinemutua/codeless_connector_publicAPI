@@ -7,7 +7,7 @@ Personal learning work on Microsoft Sentinel. Everything here is built from publ
 | Folder | What it holds |
 |---|---|
 | [codeless-connector/](codeless-connector/) | A self-contained ARM template that stands up a Microsoft Sentinel codeless connector against the public FeodoTracker (abuse.ch) threat feed, plus a detection rule and a workbook. |
-| [sentinel-study-guide/](sentinel-study-guide/) | A single-file HTML study guide: a searchable question-and-answer reference for Sentinel concepts, with mind maps and links to Microsoft Learn. |
+| [sentinel-study-guide/](sentinel-study-guide/) | A single-file HTML study guide: a searchable question-and-answer reference for Sentinel concepts, with mind maps and links to Microsoft Learn. **[View it live.](https://carolinemutua.github.io/sentinel/sentinel-study-guide/sentinel-study-guide.html)** |
 
 Each folder has its own README with the detail.
 

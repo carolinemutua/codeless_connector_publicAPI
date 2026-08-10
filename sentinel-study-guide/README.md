@@ -1,6 +1,6 @@
 # Sentinel study guide
 
-A single-file HTML study guide for Microsoft Sentinel: a searchable question-and-answer reference I built while learning the product. Open `sentinel-study-guide.html` in any browser. Nothing needs to be installed.
+A single-file HTML study guide for Microsoft Sentinel: a searchable question-and-answer reference I built while learning the product. **[View it live on GitHub Pages.](https://carolinemutua.github.io/sentinel/sentinel-study-guide/sentinel-study-guide.html)** Or open `sentinel-study-guide.html` in any browser locally. Nothing needs to be installed.
 
 ## What it covers
 
