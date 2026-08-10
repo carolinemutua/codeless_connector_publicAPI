@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sentinel Study Guide — Caroline</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  line-height: 1.55;
+}
+.wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+header h1 { font-size: 1.7rem; margin: 0 0 4px; }
+header p { color: var(--cp-text-muted); margin: 0 0 24px; }
+.stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.stat {
+  background: var(--cp-surface); border: 1px solid var(--cp-border);
+  border-radius: 16px; padding: 14px 18px; flex: 1; min-width: 120px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.stat .n { font-size: 1.5rem; font-weight: 700; color: var(--cp-accent); }
+.stat .l { font-size: 0.8rem; color: var(--cp-text-muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+input[type=search] {
+  flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 0.625rem;
+  border: 1px solid var(--cp-border); background: var(--cp-surface); color: var(--cp-text);
+  font-size: 0.95rem; font-family: inherit;
+}
+select {
+  padding: 10px 14px; border-radius: 0.625rem; border: 1px solid var(--cp-border);
+  background: var(--cp-surface); color: var(--cp-text); font-family: inherit; font-size: 0.95rem;
+}
+.card {
+  background: var(--cp-surface); border: 1px solid var(--cp-border);
+  border-radius: 16px; margin-bottom: 14px; overflow: hidden;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.card-head {
+  padding: 16px 18px; cursor: pointer; display: flex; align-items: center;
+  gap: 12px; user-select: none;
+}
+.card-head:hover { background: var(--cp-accent-soft); }
+.card-head .meta { flex: 1; }
+.card-head .topic { font-weight: 600; }
+.card-head .sub { font-size: 0.8rem; color: var(--cp-text-muted); }
+.badge {
+  font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+  white-space: nowrap;
+}
+.b-pass { background: var(--cp-success); color: #fff; }
+.b-low { background: var(--cp-danger); color: #fff; }
+.b-mid { background: var(--cp-warning); color: #1a1a1a; }
+.chev { color: var(--cp-text-soft); transition: transform 0.2s; }
+.card.open .chev { transform: rotate(90deg); }
+.card-body {
+  display: none; padding: 4px 18px 20px; border-top: 1px solid var(--cp-border);
+}
+.card.open .card-body { display: block; }
+.lbl {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--cp-accent); font-weight: 700; margin: 16px 0 4px;
+}
+.q { font-weight: 500; }
+.ans {
+  background: var(--cp-surface-soft); border-left: 3px solid var(--cp-border-strong);
+  padding: 8px 12px; border-radius: 6px; font-style: italic; color: var(--cp-text-muted);
+}
+.usecase {
+  background: var(--cp-accent-soft); border-left: 3px solid var(--cp-accent);
+  padding: 10px 14px; border-radius: 6px;
+}
+.exp ul { margin: 6px 0; padding-left: 20px; }
+.exp li { margin-bottom: 6px; }
+code {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  background: var(--cp-highlight); padding: 1px 5px; border-radius: 4px; font-size: 0.88em;
+}
+.mermaid {
+  background: var(--cp-bg-elevated); border: 1px solid var(--cp-border);
+  border-radius: 10px; padding: 10px; text-align: center; overflow-x: auto;
+}
+a { color: var(--cp-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.links a { display: inline-block; margin: 2px 10px 2px 0; font-size: 0.9rem; }
+.empty { text-align: center; color: var(--cp-text-muted); padding: 40px; }
+footer { margin-top: 32px; font-size: 0.82rem; color: var(--cp-text-soft); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Microsoft Sentinel — Study Guide</h1>
+    <p>Caroline's personal Q&amp;A reference</p>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="Search questions, answers, concepts…" />
+    <select id="topicFilter"><option value="">All topics</option></select>
+    <select id="levelFilter">
+      <option value="">All levels</option>
+      <option value="L1">L1 Beginner</option>
+      <option value="L2">L2 Intermediate</option>
+      <option value="L3">L3 Advanced</option>
+    </select>
+  </div>
+
+  <div id="list"></div>
+
+  <footer>Generated 2026-06-19 · UTC+3 · mind maps + use cases included · auto-updates as you answer new questions</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+const DATA = [
+  {
+    n: 5, date: "2026-06-19", topic: "UEBA", code: "S1.6", level: "L2", score: 7,
+    q: "A plain alert arrives: \"User Jane accessed a sensitive finance file share.\" (a) What does UEBA add to your triage that the raw alert doesn't? (b) Give one example of a 'this is abnormal for THIS user' signal. (c) Name one way the Nov 2025 Defender-portal UEBA experience surfaces anomalies.",
+    ans: "It adds and captures her behaviour. (b) Abnormal if Jane accesses files over the weekend when she usually only accesses Mon–Wednesday. (c) New Defender introduces hunting over abnormality.",
+    usecase: "<b>Saturday 2am.</b> Alert: 'Finance admin Jane downloaded 800 files from payroll.' A junior almost closes it as routine admin work. <b>With UEBA</b> her entity page is tagged <b>UEBA Anomalies</b>: access outside her Mon–Wed window, volume 60× normal, login from a never-seen country. It's not admin work — it's a likely <b>compromised account exfiltrating payroll</b>. Analyst clicks <b>Go Hunt → All user anomalies</b> and escalates in minutes.",
+    mind: "mindmap\n  root((UEBA))\n    What it is\n      Learns each user baseline\n      Scores deviations\n    Anomaly types\n      Temporal weekend vs Mon-Wed\n      Geo new country\n      Volume 50x downloads\n      First-time access\n      Peer outlier\n    Nov 2025 revamp\n      Anomalies tag\n      Top 3 in 30 days\n      Go Hunt all anomalies\n    Where\n      Enable Entity behavior\n      Tables BehaviorAnalytics Anomalies",
+    exp: "<ul><li><b>(a) ✅</b> UEBA adds Jane's <b>behavioral baseline + context</b> — turns 'Jane touched finance files' into '…and this deviates from her normal pattern, anomaly score X'.</li><li><b>(b) ✅</b> Weekend vs normal Mon–Wed = a classic <b>temporal anomaly</b>. Others: geo, volume, first-time, peer.</li><li><b>(c) ◐</b> Nov 2025 surfaces via <b>UEBA Anomalies tag</b>, <b>Top 3 anomalies (30 days)</b> on the user entity page, and <b>Go Hunt → All user anomalies</b>.</li></ul>",
+    portal: "Defender → Microsoft Sentinel → Configuration → <b>Entity behavior</b> (enable). Entity page <b>Overview → Top UEBA anomalies</b>. Incident graph → <b>Go Hunt → All user anomalies</b>. Hunting → <code>BehaviorAnalytics</code> / <code>Anomalies</code>.",
+    links: [["UEBA overview","https://learn.microsoft.com/azure/sentinel/identify-threats-with-entity-behavior-analytics"],["Enable UEBA","https://learn.microsoft.com/azure/sentinel/enable-entity-behavior-analytics"],["UEBA reference","https://learn.microsoft.com/azure/sentinel/ueba-reference"],["Investigate with UEBA","https://learn.microsoft.com/azure/sentinel/investigate-with-ueba"],["What's new","https://learn.microsoft.com/azure/sentinel/whats-new"]]
+  },
+  {
+    n: 4, date: "2026-06-19", topic: "Fundamentals & Architecture", code: "S1.1", level: "L3", score: 2,
+    q: "Two Sentinel workspaces in separate regions (EU & US) for data residency, but the SOC wants one pane to hunt across both. (a) What KQL capability queries across both? (b) A key architectural/cost consideration at scale? (c) Why can't they just consolidate into one workspace?",
+    ans: "(c) Compliance requirements / data residency. (a) and (b) — didn't know.",
+    usecase: "<b>A bank with EU + US SOCs.</b> GDPR forces EU logs to stay in Frankfurt; US logs sit in Virginia. A threat actor uses one stolen credential in both regions. The analyst can't see the full story in one workspace — so they run a <b>cross-workspace union</b> that federates results from both regions into one hunt <b>without moving any data across borders</b>, preserving residency while connecting the dots.",
+    mind: "mindmap\n  root((Cross-workspace))\n    Why two workspaces\n      Data residency law\n      One workspace = one region\n    How to query both\n      union keyword\n      workspace() function\n      up to 100 resources\n    Considerations\n      Performance fan-out\n      Cost of scanning\n      No data movement\n      Hardcoded names break",
+    exp: "<ul><li><b>(a)</b> Cross-workspace via <code>workspace()</code> + <code>union</code>: <code>union SecurityEvent, workspace(\"us-ws\").SecurityEvent</code>. Up to ~100 resources; powers cross-workspace workbooks &amp; rules.</li><li><b>(b)</b> <b>Performance/timeouts</b>, <b>cost of scanning</b>, <b>no cross-region data movement</b>, <b>maintainability</b>.</li><li><b>(c) ✅</b> <b>Data residency / compliance</b> — EU data must stay in EU; one global workspace lives in one region.</li></ul>",
+    portal: "Defender → Microsoft Sentinel → <b>Hunting / Logs</b> → <code>union workspace(...)</code>. Analytics → Create → Scheduled rule can target multiple workspaces.",
+    links: [["Cross-workspace query","https://learn.microsoft.com/azure/azure-monitor/logs/cross-workspace-query"],["Extend across workspaces/tenants","https://learn.microsoft.com/azure/sentinel/extend-sentinel-across-workspaces-tenants"]]
+  },
+  {
+    n: 3, date: "2026-06-19", topic: "Fundamentals & Architecture", code: "S1.1", level: "L2", score: 7,
+    q: "Customer ingesting ~180 GB/day. (a) How does Commitment (capacity reservation) tier differ from Pay-As-You-Go, and when does it make sense? (b) Where in the portal do you change the pricing tier? (c) Name one log type ingested for free.",
+    ans: "Commitment makes sense with very large ingest; PAYG when ingest is unpredictable. (b) Defender → Settings → Sentinel → select workspace → change. (c) Alerts data like device alerts.",
+    usecase: "<b>A retailer onboarding Sentinel.</b> During a pilot they ingest a few GB/day — unpredictable — so <b>PAYG</b> is cheapest. Six months later they're steady at 180 GB/day. Finance notices the bill. Switching to the <b>200 GB/day commitment tier</b> locks a discounted per-GB rate and cuts the monthly cost ~15% — same data, lower price, just because volume became large and predictable.",
+    mind: "mindmap\n  root((Pricing))\n    Pay-As-You-Go\n      Per GB no commitment\n      Best for low or unpredictable\n    Commitment tier\n      Fixed daily capacity\n      Discounted per GB\n      Starts at 100 GB/day\n    Free data\n      Defender XDR alerts\n      Azure Activity\n      Defender for Cloud alerts\n    Where to set\n      Settings then Pricing tab",
+    exp: "<ul><li><b>(a) ✅</b> Commitment = fixed daily capacity at a <b>discounted per-GB rate</b>; PAYG = per-GB, suits unpredictable/low volume. Tiers start at <b>100 GB/day</b>, so 180 GB/day → commitment wins.</li><li><b>(b) ◐</b> Exact path: Defender → Microsoft Sentinel → <b>Configuration → Settings → Pricing</b>.</li><li><b>(c) ✅</b> Defender XDR alerts (incl. device alerts). Also: Azure Activity, Defender for Cloud alerts.</li></ul>",
+    portal: "Defender → Microsoft Sentinel → Configuration → <b>Settings → Pricing</b> tab.",
+    links: [["Billing","https://learn.microsoft.com/azure/sentinel/billing"],["Free data sources","https://learn.microsoft.com/azure/sentinel/billing#free-data-sources"]]
+  },
+  {
+    n: 2, date: "2026-06-19", topic: "Fundamentals & Architecture", code: "S1.1", level: "L2", score: 4,
+    q: "A record has both TimeGenerated and a source timestamp (EventTime) minutes apart. (a) What does TimeGenerated represent and why does it differ? (b) Which should an analytics rule filter on for its lookback window, and why? (c) What component stores the data?",
+    ans: "(a) TimeGenerated is what's generated when logs hit Log Analytics; differs if logs took a while to arrive. (b) and (c) — didn't answer.",
+    usecase: "<b>A firewall in a remote branch with flaky connectivity.</b> An event is generated at 09:00 but only reaches the workspace at 09:08. A rule running 'last 5 minutes' on the <b>source</b> timestamp would never see it — the attack slips through. Filter on <b>TimeGenerated</b> instead and the rule catches the event when it lands, regardless of the 8-minute lag.",
+    mind: "mindmap\n  root((TimeGenerated))\n    Meaning\n      Time record ingested\n      Stamped by workspace\n    Why it differs\n      Ingestion latency\n      Slow source or network\n    Rules\n      Filter on TimeGenerated\n      Catches late logs\n      ingestion_time function\n    Storage\n      Log Analytics workspace\n      Built on Kusto ADX",
+    exp: "<ul><li><b>(a) ✅</b> TimeGenerated = time ingested into the workspace; differs due to <b>ingestion latency</b>.</li><li><b>(b)</b> Filter on <b>TimeGenerated</b> — else you <b>miss late-arriving logs</b>. <code>ingestion_time()</code> exposes it.</li><li><b>(c)</b> <b>Log Analytics workspace</b> on the <b>Azure Data Explorer (Kusto)</b> engine.</li></ul>",
+    portal: "Defender → Microsoft Sentinel → Logs / Hunting → every table exposes <code>TimeGenerated</code>.",
+    links: [["Standard columns / TimeGenerated","https://learn.microsoft.com/azure/azure-monitor/logs/log-standard-columns#timegenerated"]]
+  },
+  {
+    n: 1, date: "2026-06-19", topic: "Fundamentals & Architecture", code: "S1.1", level: "L2", score: 5,
+    q: "Least-privilege SOC access — a Tier-1 analyst must triage incidents and run a playbook, but not edit rules/settings. (a) Which role & scope? (b) Extra permission to run a playbook? (c) Why is Log Analytics Contributor at subscription level wrong?",
+    ans: "Roles shouldn't be at subscription level because a subscription has many resources — that violates least privilege.",
+    usecase: "<b>A new Tier-1 hire joins the SOC.</b> Granting them Contributor on the whole subscription would let them delete VMs and databases unrelated to security — a huge blast radius. Instead you scope a security role to just the <b>Sentinel workspace</b>: they can triage incidents but can't touch anything else. Least privilege = smallest blast radius if their account is ever compromised.",
+    mind: "mindmap\n  root((Least privilege))\n    Scope matters\n      Workspace = narrow\n      Subscription = too broad\n    Why narrow\n      Smaller blast radius\n      Compromise contained\n    Principle\n      Only what the job needs",
+    exp: "<ul><li><b>(c) ✅</b> Grant at the <b>workspace (resource) scope</b>, not subscription; a subscription spans many resources, so broad rights break least privilege.</li><li><b>(a)/(b)</b> <b>De-emphasized per preference</b> — detailed RBAC role-name recall is skipped for practical/portal/KQL concepts.</li></ul>",
+    portal: "—",
+    links: []
+  }
+];
+
+function badgeClass(s){ return s>=7 ? "b-pass" : (s<=4 ? "b-low" : "b-mid"); }
+
+function renderStats(){
+  const total = DATA.length;
+  const avg = (DATA.reduce((a,b)=>a+b.score,0)/total).toFixed(1);
+  const passed = DATA.filter(d=>d.score>=7).length;
+  const topics = new Set(DATA.map(d=>d.topic)).size;
+  document.getElementById("stats").innerHTML = [
+    [total,"Questions"],[avg,"Avg score"],[passed,"Passed (≥7)"],[topics,"Topics"]
+  ].map(([n,l])=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+}
+
+function renderTopicFilter(){
+  const sel = document.getElementById("topicFilter");
+  [...new Set(DATA.map(d=>d.topic))].forEach(t=>{
+    const o=document.createElement("option"); o.value=t; o.textContent=t; sel.appendChild(o);
+  });
+}
+
+let mermaidReady = false;
+function initMermaid(){
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "neutral", securityLevel: "loose" });
+    mermaidReady = true;
+  }
+}
+
+async function renderMermaidIn(card){
+  if(!mermaidReady) return;
+  const nodes = card.querySelectorAll(".mermaid:not([data-done])");
+  for(const node of nodes){
+    node.setAttribute("data-done","1");
+    try {
+      const id = "mm-" + Math.random().toString(36).slice(2);
+      const { svg } = await mermaid.render(id, node.textContent.trim());
+      node.innerHTML = svg;
+    } catch(e){ node.innerHTML = "<small>(mind map needs internet to render)</small>"; }
+  }
+}
+
+function toggleCard(head){
+  const card = head.parentElement;
+  card.classList.toggle("open");
+  if(card.classList.contains("open")) renderMermaidIn(card);
+}
+
+function render(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const tf = document.getElementById("topicFilter").value;
+  const lf = document.getElementById("levelFilter").value;
+  const list = document.getElementById("list");
+  const items = DATA.filter(d=>{
+    if(tf && d.topic!==tf) return false;
+    if(lf && d.level!==lf) return false;
+    if(q){ const blob=(d.q+" "+d.ans+" "+d.exp+" "+d.usecase+" "+d.topic).toLowerCase(); if(!blob.includes(q)) return false; }
+    return true;
+  });
+  if(!items.length){ list.innerHTML='<div class="empty">No questions match your filters.</div>'; return; }
+  list.innerHTML = items.map(d=>`
+    <div class="card" data-n="${d.n}">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="badge ${badgeClass(d.score)}">${d.score}/10</span>
+        <div class="meta">
+          <div class="topic">${d.topic}</div>
+          <div class="sub">${d.code} · Level ${d.level.slice(1)} · ${d.date}</div>
+        </div>
+        <span class="chev">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="lbl">Question</div><div class="q">${d.q}</div>
+        <div class="lbl">Your answer</div><div class="ans">${d.ans}</div>
+        <div class="lbl">Mind map</div><div class="mermaid">${d.mind}</div>
+        <div class="lbl">Use case</div><div class="usecase">${d.usecase}</div>
+        <div class="lbl">Explanation</div><div class="exp">${d.exp}</div>
+        ${d.portal!=="—" ? `<div class="lbl">Portal path</div><div>${d.portal}</div>`:""}
+        ${d.links.length ? `<div class="lbl">Further reading</div><div class="links">${d.links.map(l=>`<a href="${l[1]}" target="_blank">${l[0]} ↗</a>`).join("")}</div>`:""}
+      </div>
+    </div>`).join("");
+}
+
+initMermaid();
+renderStats(); renderTopicFilter(); render();
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("topicFilter").addEventListener("change", render);
+document.getElementById("levelFilter").addEventListener("change", render);
+</script>
+</body>
+</html>
